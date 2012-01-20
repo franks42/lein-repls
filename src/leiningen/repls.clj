@@ -1,6 +1,8 @@
 (ns leiningen.repls
   "Start a repl session either with the current project or standalone."
-  (:require [clojure.main])
+  (:require [clojure.main]
+  					;[lein-repls.core]
+  					)
   ;;(:require [fs.core :as fs])
   (:use [leiningen.core :only [exit user-settings *interactive?*]]
         [leiningen.compile :only [eval-in-project]]
@@ -11,65 +13,7 @@
            (java.io OutputStreamWriter InputStreamReader File PrintWriter)
            (clojure.lang LineNumberingPushbackReader)))
 
-;;---------------------------------------------------------------------------------------------------------------------
-
-;;(defn -main [] "println "HELLO")
-
-(defn repl-no-prompt "prints no prompt for pure cli-usage" [] (printf "")(flush))
-(defn repl-ns-prompt [] (printf "%s=> " (ns-name *ns*))(flush))
-;(defn repl-cwd-prompt [] (printf "%s > " @fs/cwd)(flush))
-(defn repl-hi-prompt [] (print "hi> ")(flush))
-(defn repl-nil-prompt [] nil)
-
-(defn current-thread [] (. Thread currentThread))
-(defn thread-id [a-thread] (.getId a-thread))
-
-(def ^:dynamic *cljsh-args* "")
-
-(def ^:dynamic *repl-thread-prompt-map* (atom {}))
-(def ^:dynamic *repl-result-print-map* (atom {}))
-
-(defn set-prompt 
-	"sets the prompt function associated with the current thread."
-	[prompt-fun]
-	(swap! *repl-thread-prompt-map* assoc (current-thread) prompt-fun)
-	prompt-fun)
-
-(defn set-repl-result-print 
-	"sets the eval-result print function associated with the current thread."
-	[print-fun]
-	(swap! *repl-result-print-map* assoc (current-thread) print-fun)
-	print-fun)
-
-(defn repl-thread-prompt 
-	"returns the prompt-function that is mapped to the current thread"
-	[]
-	(let [p (get @*repl-thread-prompt-map* (current-thread))]
-		(if p
-			p
-			(if (= @*repl-thread-prompt-map* {})
-				(set-prompt repl-ns-prompt)
-				(set-prompt repl-nil-prompt)))))
-			
-
-(defn repl-result-print 
-	"returns the print-function that is mapped to the current thread"
-	[]
-	(let [p (get @*repl-result-print-map* (current-thread))]
-		(if p
-			p
-			(if (= @*repl-result-print-map* {})
-				(set-repl-result-print prn)
-				(set-repl-result-print (fn [a]))))))
-			
-
-
-(def ^:dynamic *repl-prompt* (fn [] ((repl-thread-prompt))))
-
-;;(def ^:dynamic *repl-result-print* prn)
-(def ^:dynamic *repl-result-print* (fn [a] ((repl-result-print) a)))
-
-;;---------------------------------------------------------------------------------------------------------------------
+(require 'cljsh.core)
 
 (def retry-limit 200)
 
@@ -84,6 +28,7 @@
                                  "deprecated; use :repl-init."))
                    (load-file is#))
                  (when in#
+                 		(println "repl-init:" in#) 
                    (require in#))
                  (when mn#
                    (require mn#))
@@ -102,27 +47,20 @@
                     (let [input# (read)]
                       (clojure.main/skip-if-eol *in*)
                       ;;(if (= ::exit input#) ; programmatically signal close
-                      (if (= :leiningen.repls/exit input#) ; programmatically signal close
+                      (if (= :leiningen.repl/exit input#) ; programmatically signal close
                         (do (.close *in*) request-exit#)
                         input#))))
-		;;:prompt leiningen.repls/*repl-prompt*
-		prompt (var *repl-prompt*)
-		;;:print leiningen.repls/*repl-result-print*
-		;;ppprint `(fn [a#] ((~repl-result-print) a#))
-        ]
-    (println "JAJAJA" prompt)
-    ;;(println [:init init :caught caught :read read :prompt prompt :print ppprint])
-    (println options)
-    (apply concat [:init init :caught caught :read read :prompt prompt]
-           (dissoc options :caught :init :read :prompt :print))))
-    ;;(apply concat [:init init :caught caught :read read]
-           ;;(dissoc options :caught :init :read))))
-
+				prompt `cljsh.core/*repl-prompt*
+				evalprint `cljsh.core/*repl-result-print*
+    ]
+    (apply concat [:init init :caught caught :read read :print evalprint :prompt prompt]
+           (dissoc options :caught :init :read))))
+				
 (defn repl-server [project host port & options]
 	`(do (try ;; transitive requires don't work for stuff on bootclasspath
 			(require '~'clojure.java.shell)
 			(require '~'clojure.java.browse)
-			(require '~'leiningen.repls)
+			;;(require '~'leiningen.repls)
 			;; these are new in clojure 1.2, so swallow exceptions for 1.1
 			(catch Exception _#))
 			(set! *warn-on-reflection* false)
@@ -223,6 +161,8 @@ directory will start a standalone repl session."
            retries (- retry-limit (or (:repl-retry-limit project)
                                         ((user-settings) :repl-retry-limit)
                                         retry-limit))]
+       (println "port/host" port host)
+       (clojure.java.shell/sh "bash" "-c" (str "echo export LEIN_REPL_PORT='" port "'" " > $HOME/.lein_repls"))
        (if *trampoline?*
          (eval-in-project project server-form)
          (do (future (if (empty? project)
