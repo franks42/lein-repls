@@ -102,7 +102,7 @@ while getopts "iwphtm:c:s:" opt; do
 		echo "`basename $0` -m task-max-time-sec       # -m set max time for task (default ${CLJSH_MAXTIME}sec)" >&2;
 		echo "`basename $0` -h                         # -h this usage help plus diagnostic check & exit" >&2;
     	echo "---" >&2;
-		echo "Docs & code at \"https://github.com/franks42/cljsh\"" >&2;
+		echo "Docs & code at \"https://github.com/franks42/lein-repls\"" >&2;
       	exit 1
 		;;
     \?) echo "Invalid option: -$OPTARG" >&2
