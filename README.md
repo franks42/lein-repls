@@ -25,7 +25,7 @@ sudo port install rlwrap
 The easiest way to play with cljsh is to clone the github [cljsh project](https://github.com/franks42/cljsh) ("https://github.com/franks42/cljsh"), build it with lein, and start the lein repl in a terminal inside the cljsh repo directory:
   
   $ lein deps  
-  $ lein lein1 plugin install repls
+  $ lein lein plugin install lein-repls
   $ lein repls  
   REPL started; server listening on 0.0.0.0 port 12357  
   cljsh.core=>  
