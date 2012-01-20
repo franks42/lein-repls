@@ -1,0 +1,7 @@
+classes/*
+*/.DS_Store
+.DS_Store
+bin/tst.clj
+bin/tst.cljsh
+bin/tst.txt
+bin/upper.cljsh
