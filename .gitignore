@@ -5,3 +5,5 @@ bin/tst.clj
 bin/tst.cljsh
 bin/tst.txt
 bin/upper.cljsh
+.lein_repls
+bin/t.sh
