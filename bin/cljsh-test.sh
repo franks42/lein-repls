@@ -64,7 +64,7 @@ cljsh -c '(println "=> this is NOT followed by a nil on the next line")'
 # cljsh interacts with a persistent repl - any changes to the repl-state are preserved across cljsh invocations:
 cljsh -pc '(defn jaja [t] (println t))'
 #----------------------------------------------------------------------------------------------------------------------
-#  #'cljsh.core/jaja
+#  #'user/jaja
 #----------------------------------------------------------------------------------------------------------------------
 cljsh -c '(jaja "=> hello again")'
 #----------------------------------------------------------------------------------------------------------------------

@@ -12,7 +12,7 @@
 # It allows the user to submit Clojure statement and Clojure script files
 # to the persistent networked repl for evaluation.
 
-CLJSH_VERSION="0.3"
+CLJSH_VERSION="0.5"
 
 # send kill-switch as final separate statement to end the repl session/connection gracefully
 LEIN_REPL_KILL_SWITCH=':leiningen.repl/exit'
@@ -100,7 +100,8 @@ while getopts "iwphtm:c:s:" opt; do
     	echo "optionally, arbitrary data can be passed in thru stdin (-t)" >&2;
     	echo "cljsh also has an interactive repl mode (-i) with code completion support (-w)" >&2;
 		# do simple check to see if repl-server can be seen listenen
-		if [ "$(netstat -an -f inet |grep '*.'${LEIN_REPL_PORT})" == "" ]; then
+		# lsof -P -p 37683 -i TCP:14331 -sTCP:LISTEN -t
+		if [ "$(netstat -an -f inet |grep '*.*' | grep ${LEIN_REPL_PORT})" == "" ]; then
 			echo "ERROR: no \"lein repl\" server listening on port ${LEIN_REPL_PORT} (use -s or \$LEIN_REPL_PORT for different port)" >&2;
 		else
 			echo "\"lein repl\" server most probably is listening on port ${LEIN_REPL_PORT}" >&2;
@@ -162,7 +163,7 @@ if [ $CLJFILE ]; then
 		CLJ_LOAD_CODE='(load-file "'${CLJFILEFP}'")'
 		# assign cljsh.core/*cljsh-args* to the args associated with that clojure file
 		shift   #  now we're left with the additional argument that go with the clojure file
-		CLJ_ARGS_CODE='(def ^:dynamic cljsh.core/*cljsh-args* "'${CLJFILEFP}' '$*'")'
+		CLJ_ARGS_CODE='(binding [*ns* (find-ns (quote cljsh.core))] (eval (quote (def ^:dynamic cljsh.core/*cljsh-args* "'${CLJFILEFP}' '$*'"))))'
 		CLJ_ARGS_CODE=`echo $CLJ_ARGS_CODE | sed s/\"/\\\\\"/g`
 	else
 		echo "ERROR: \"$CLJFILE\" is no valid file-path for a clojure-file." >&2
@@ -194,7 +195,7 @@ CLJTMPLOADFILE=`mktemp -t ${CLJ_TMP_FNAME}` || exit 1
 /bin/echo -n  "$CLJ_LOAD_TMP_CODE" >> $CLJTMPLOADFILE
 if [ "" != "$CLJ_LOAD_CODE" ]; then /bin/echo -n  "$CLJ_LOAD_CODE" >> $CLJTMPLOADFILE; fi
 if [ "$CLJ_REPL" = 1 ]; then  # user wants an interactive REPL
-	/bin/echo '"Welcome to your cljsh-lein-repl")' >> $CLJTMPLOADFILE;
+	/bin/echo '"Welcome to your cljsh-lein-repls")' >> $CLJTMPLOADFILE;
 else
 	/bin/echo ')'     >> $CLJTMPLOADFILE;
 fi
@@ -211,25 +212,25 @@ if [ "$CLJ_REPL" = 1 ]; then  # user wants an interactive REPL
 	# max task time doesn't seem to affect interactive repl, but does affect the delay of ctrl-d
 	CLJSH_MAXTIME="0.1"
 	
-	rlwrap $CLJ_FLAG_WORDS -p Red -R -m " \ " -q'"' -b "(){}[],^%$#@\"\";:''|\\" catcljsh $CLJTMPLOADFILE -
-
+	rlwrap $CLJ_FLAG_WORDS -p Red -R -m " \ " -q'"' -b "(){}[],^%$#@\"\";:''|\\" bash -c "cat $CLJTMPLOADFILE - | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT}"
+	
 else  # no REPL, nothing interactive
 
 	if [ "$CLJSH_STDIN" = "TERM" ]; then
 	
-		catcljsh $CLJTMPLOADFILE $CLJKILLTMPFILE    # ignore the terminal as user doesn't want interactive-repl
+		cat $CLJTMPLOADFILE $CLJKILLTMPFILE | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT};
 		
 	else
 	
 		if [ "$CLJ_STDIN_TEXT" = 1 ]; then   # arbitrary data and no code coming from stdin
 		
 			# user's code is responsible for closing *in* to indicate eof as we cannot deduce it to use the kill-switch
-			catcljsh $CLJTMPLOADFILE - ;
-			
+		cat $CLJTMPLOADFILE - | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT};
+		
 		else   # expect clojure code to be piped-in from stdin and kill/end the session after that
 		
 			# because the repl keeps reading from stdin for clojure-statements, we can append the kill-switch at the end
-			catcljsh $CLJTMPLOADFILE - $CLJKILLTMPFILE ;
+			cat $CLJTMPLOADFILE - $CLJKILLTMPFILE | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT};
 			
 		fi
 	fi

@@ -1,6 +1,7 @@
 (ns leiningen.repls
   "Start a repl session either with the current project or standalone."
   (:require [clojure.main]
+  					[clojure.pprint]
   					;[lein-repls.core]
   					)
   ;;(:require [fs.core :as fs])
@@ -16,6 +17,64 @@
 
 (require 'cljsh.core)
 
+;;-----------------------------------------------------------------------------
+
+(defn repl-no-prompt "prints no prompt for pure cli-usage" [] (printf "")(flush))
+(defn repl-ns-prompt [] (printf "%s=> " (ns-name *ns*))(flush))
+;;(defn repl-cwd-prompt [] (printf "%s > " @fs/cwd)(flush))
+(defn repl-hi-prompt [] (print "hi> ")(flush))
+(defn repl-nil-prompt [] nil)
+
+(defn current-thread [] (. Thread currentThread))
+(defn thread-id [a-thread] (.getId a-thread))
+
+(def ^:dynamic *cljsh-args* "")
+
+(def ^:dynamic *repl-thread-prompt-map* (atom {}))
+(def ^:dynamic *repl-result-print-map* (atom {}))
+
+(defn set-prompt 
+	"sets the prompt function associated with the current thread."
+	[prompt-fun]
+	(swap! *repl-thread-prompt-map* assoc (current-thread) prompt-fun)
+	prompt-fun)
+
+(defn set-repl-result-print 
+	"sets the eval-result print function associated with the current thread."
+	[print-fun]
+	(swap! *repl-result-print-map* assoc (current-thread) print-fun)
+	print-fun)
+
+(defn repl-thread-prompt 
+	"returns the prompt-function that is mapped to the current thread"
+	[]
+	(let [p (get @*repl-thread-prompt-map* (current-thread))]
+		(if p
+			p
+			(if (= @*repl-thread-prompt-map* {})
+				(set-prompt repl-ns-prompt)
+				(set-prompt repl-nil-prompt)))))
+			
+
+(defn repl-result-print 
+	"returns the print-function that is mapped to the current thread"
+	[]
+	(let [p (get @*repl-result-print-map* (current-thread))]
+		(if p
+			p
+			(if (= @*repl-result-print-map* {})
+				(set-repl-result-print prn)
+				(set-repl-result-print (fn [a]))))))
+			
+
+
+(def ^:dynamic *repl-prompt* (fn [] ((repl-thread-prompt))))
+
+;;(def ^:dynamic *repl-result-print* prn)
+(def ^:dynamic *repl-result-print* (fn [a] ((repl-result-print) a)))
+
+;;-----------------------------------------------------------------------------
+
 (def retry-limit 200)
 
 (defn repl-options [project options]
@@ -29,7 +88,7 @@
                                  "deprecated; use :repl-init."))
                    (load-file is#))
                  (when in#
-                 		(println "repl-init:" in#) 
+                 		(println "repl-init:" in#)
                    (require in#))
                  (when mn#
                    (require mn#))
@@ -51,16 +110,18 @@
                       (if (= :leiningen.repl/exit input#) ; programmatically signal close
                         (do (.close *in*) request-exit#)
                         input#))))
-				prompt `cljsh.core/*repl-prompt*
-				evalprint `cljsh.core/*repl-result-print*
+				;;prompt `cljsh.core/*repl-prompt*
+				;;evalprint `cljsh.core/*repl-result-print*
     ]
-    (apply concat [:init init :caught caught :read read :print evalprint :prompt prompt]
+    ;;(apply concat [:init init :caught caught :read read :print evalprint :prompt prompt]
+    (apply concat [:init init :caught caught :read read]
            (dissoc options :caught :init :read))))
 				
 (defn repl-server [project host port & options]
 	`(do (try ;; transitive requires don't work for stuff on bootclasspath
 			(require '~'clojure.java.shell)
 			(require '~'clojure.java.browse)
+      ;;(require '~'cljsh.core)
 			;;(require '~'leiningen.repls)
 			;; these are new in clojure 1.2, so swallow exceptions for 1.1
 			(catch Exception _#))
@@ -93,7 +154,7 @@
 			(if ~*trampoline?*
 				(clojure.main/repl ~@options)
 				(do (when-not ~*interactive?*
-						(println "repls-repl started; server listening on"
+						(println "repls-server started and listening on"
 							~host "port" ~port))
 					;; block to avoid shutdown-agents
 					@(promise))))))
@@ -154,17 +215,22 @@ directory will start a standalone repl session."
      (when (and project (or (empty? (find-deps-files project))
                             (:checksum-deps project)))
        (deps project))
-     (let [[port host] (repl-socket-on project)
+     (let	[project (assoc project :project-init '(require 'cljsh.core))
+     			 [port host] (repl-socket-on project)
            server-form (apply repl-server project host port
                               (concat (:repl-options project)
-                                      (:repl-options (user-settings))))
+                                      (:repl-options (user-settings))
+                                      [:prompt 'cljsh.core/*repl-prompt*
+                                       :print  'cljsh.core/*repl-result-print*]))
            ;; TODO: make this less awkward when we can break poll-repl-connection
            retries (- retry-limit (or (:repl-retry-limit project)
                                         ((user-settings) :repl-retry-limit)
                                         retry-limit))]
-       (let [pwd (:out (clojure.java.shell/sh "bash" "-c" (str "echo -n `pwd`")))
+     	(let [pwd (:out (clojure.java.shell/sh "bash" "-c" (str "echo -n `pwd`")))
+       			pid (:out (clojure.java.shell/sh "bash" "-c" (str "echo -n ${PPID}")))
        			lfname (str "echo export LEIN_REPL_PORT='" port "'" " >  " pwd "/.lein_repls")]
       	 (clojure.java.shell/sh "bash" "-c" lfname)
+      	 (clojure.java.shell/sh "bash" "-c" (str "echo export LEIN_REPL_PID='" pid "'" " >>  " pwd "/.lein_repls"))
        )
        (if *trampoline?*
          (eval-in-project project server-form)
