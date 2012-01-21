@@ -8,6 +8,7 @@
         [leiningen.compile :only [eval-in-project]]
         [leiningen.deps :only [find-deps-files deps]]
         [leiningen.trampoline :only [*trampoline?*]]
+        [leiningen.util.paths :only [leiningen-home]]
         [clojure.java.io :only [copy]])
   (:import (java.net Socket InetAddress ServerSocket SocketException)
            (java.io OutputStreamWriter InputStreamReader File PrintWriter)
@@ -161,8 +162,10 @@ directory will start a standalone repl session."
            retries (- retry-limit (or (:repl-retry-limit project)
                                         ((user-settings) :repl-retry-limit)
                                         retry-limit))]
-       (println "port/host" port host)
-       (clojure.java.shell/sh "bash" "-c" (str "echo export LEIN_REPL_PORT='" port "'" " > $HOME/.lein_repls"))
+       (let [pwd (:out (clojure.java.shell/sh "bash" "-c" (str "echo -n `pwd`")))
+       			lfname (str "echo export LEIN_REPL_PORT='" port "'" " >  " pwd "/.lein_repls")]
+      	 (clojure.java.shell/sh "bash" "-c" lfname)
+       )
        (if *trampoline?*
          (eval-in-project project server-form)
          (do (future (if (empty? project)

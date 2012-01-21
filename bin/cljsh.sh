@@ -20,11 +20,27 @@ LEIN_REPL_KILL_SWITCH=':leiningen.repl/exit'
 # rlwrap's clojure word completion in the repl use the following file
 CLJ_WORDS_FILE=${CLJ_WORDS_FILE:-"$HOME/.clj_completions"}
 
+# determine the directory of the associated project.clj, or $HOME if none.
+export LEIN_PROJECT_DIR=$(
+NOT_FOUND=1
+ORIGINAL_PWD="$PWD"
+while [ ! -r "$PWD/project.clj" ] && [ "$PWD" != "/" ] && [ $NOT_FOUND -ne 0 ]
+do
+    cd ..
+    if [ "$(dirname "$PWD")" = "/" ]; then
+        NOT_FOUND=0
+        cd "$ORIGINAL_PWD"
+    fi
+done
+if [ ! -r "$PWD/project.clj" ]; then cd "$HOME"; fi
+printf "$PWD"
+)
+
 # ideally should be able to deduce repl-server parameters from lein... 
 # for now just hard-code those values, which should match those in project.clj
 
-export LEIN_REPL_INITFILE=${LEIN_REPL_INITFILE:-"${HOME}/.lein_repls"}
-if [ -f "${LEIN_REPL_INITFILE}" ]; then . "${LEIN_REPL_INITFILE}" ; fi
+export LEIN_REPL_INIT_FILE=${LEIN_REPL_INIT_FILE:-"${LEIN_PROJECT_DIR}/.lein_repls"}
+if [ -f "${LEIN_REPL_INIT_FILE}" ]; then . "${LEIN_REPL_INIT_FILE}" ; fi
 
 export LEIN_REPL_HOST=${LEIN_REPL_HOST:-"0.0.0.0"}
 export LEIN_REPL_PORT=${LEIN_REPL_PORT:-"12357"}
@@ -34,6 +50,7 @@ export LEIN_REPL_PORT=${LEIN_REPL_PORT:-"12357"}
 # if you expect clojure programs to take more than 10min (default 600s) inbetween i/o, increase CLJSH_MAXTIME appropriately
 # (shorter tasks force the closing of the connection by sending a kill-switch at the end of the script, i.e. :leiningen.repl/exit)
 export CLJSH_MAXTIME=${CLJSH_MAXTIME:-"600"}
+
 
 # basename component for tmp-files
 CLJ_TMP_FNAME=`basename $0`
