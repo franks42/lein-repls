@@ -63,7 +63,7 @@ if [[ -t 0 ]]; then CLJSH_STDIN="TERM"; fi
 # command line option processing
 CLJ_REPL=0; CLJ_EVAL_PRINT=0
 CLJ_CODE=""; CLJ_REPL_CODE=""; CLJ_PRINT_CODE=""
-while getopts "iwphtm:c:s:" opt; do
+while getopts "iwpghtm:c:s:" opt; do
   case $opt in
     c) 	# clojure code statements expected as options value
     	if [ "$CLJ_CODE" ]; then
@@ -88,23 +88,28 @@ while getopts "iwphtm:c:s:" opt; do
     t) 	# text/arbitrary data and no clojure-code expected from stdin, so don't eval stdin.
     	CLJ_STDIN_TEXT=1
       	;;
+    g) 	# force a pickup of the "global" repls-server coordinates from the $HOME directory.
+				if [ -f "${HOME}/.lein_repls" ]; then . "${HOME}/.lein_repls" ; fi
+      	;;
     p) 	# turn on printing of eval-results by the repl.
     	CLJ_EVAL_PRINT=1
       	CLJ_PRINT_CODE='(cljsh.core/set-repl-result-print prn)'
       	;;
     h)  echo "Usage: `basename $0` [OPTIONS] [FILE]" >&2;
     	echo "Clojure Shell version: \"${CLJSH_VERSION}\"" >&2;
-    	echo "cljsh sends clojure code to leiningen's repl-server for evaluation." >&2;
-    	echo "printed output and optional eval results (-p) are returned thru stdout" >&2;
-    	echo "clojure code is passed on command line (-c), in file, or thru stdin" >&2;
-    	echo "optionally, arbitrary data can be passed in thru stdin (-t)" >&2;
-    	echo "cljsh also has an interactive repl mode (-i) with code completion support (-w)" >&2;
+    	echo "'cljsh' is a shell script that sends clojure code to a persistent socket-repls-server for evaluation." >&2;
+    	echo "The repls-server is started in the project's directory thru 'lein repls'." >&2;
+    	echo "Printed output and optional eval results (-p) are returned thru stdout." >&2;
+    	echo "Clojure code is passed on command line (-c), in file, or thru stdin" >&2;
+    	echo "Optionally, arbitrary data can be passed in thru stdin (-t)." >&2;
+    	echo "True '#!/usr/bin/env cljsh' clojure shell-script files are supported." >&2;
+    	echo "'cljsh' also has an interactive repl mode (-i) with code completion support (-w)" >&2;
 		# do simple check to see if repl-server can be seen listenen
 		# lsof -P -p 37683 -i TCP:14331 -sTCP:LISTEN -t
 		if [ "$(netstat -an -f inet |grep '*.*' | grep ${LEIN_REPL_PORT})" == "" ]; then
-			echo "ERROR: no \"lein repl\" server listening on port ${LEIN_REPL_PORT} (use -s or \$LEIN_REPL_PORT for different port)" >&2;
+			echo "ERROR: no \"lein repls\" server listening on port ${LEIN_REPL_PORT} (use -s or \$LEIN_REPL_PORT for different port)" >&2;
 		else
-			echo "\"lein repl\" server most probably is listening on port ${LEIN_REPL_PORT}" >&2;
+			echo "\"lein repls\" server most probably is listening on port ${LEIN_REPL_PORT}" >&2;
 		fi
 		hash socat 2>&-  || { echo >&2 "ERROR: \"socat\" is require for cljsh but not installed.";}
 		hash rlwrap 2>&- || { echo >&2 "ERROR: \"rlwrap\" is require for cljsh but not installed.";}
@@ -116,8 +121,9 @@ while getopts "iwphtm:c:s:" opt; do
 		echo "echo clojure-code | `basename $0`        # eval piped clojure-code in repl-server" >&2;
 		echo "echo text | `basename $0` -t -c code     # -t input from stdin is arbitrary data, not code" >&2;
 		echo "`basename $0` -w                         # -w refresh the clojure words for completion in repl" >&2;
-		echo "`basename $0` -s repl-server-port        # -s repl server port (default ${LEIN_REPL_PORT} or use \$LEIN_REPL_PORT)" >&2;
-		echo "`basename $0` -m task-max-time-sec       # -m set max time for task (default ${CLJSH_MAXTIME}sec)" >&2;
+		echo "`basename $0` -g                         # -g force a pickup of the \"global\" repls-server coordinates from \"$HOME/.lein_repls\"" >&2;
+		echo "`basename $0` -s repl-server-port        # -s repl server port (by default automatically communicated by 'lein repls')" >&2;
+		echo "`basename $0` -m task-max-time-sec       # -m set max time for task (default ${CLJSH_MAXTIME}sec - see docs)" >&2;
 		echo "`basename $0` -h                         # -h this usage help plus diagnostic check & exit" >&2;
     	echo "---" >&2;
 		echo "Docs & code at \"https://github.com/franks42/lein-repls\"" >&2;
@@ -195,7 +201,7 @@ CLJTMPLOADFILE=`mktemp -t ${CLJ_TMP_FNAME}` || exit 1
 /bin/echo -n  "$CLJ_LOAD_TMP_CODE" >> $CLJTMPLOADFILE
 if [ "" != "$CLJ_LOAD_CODE" ]; then /bin/echo -n  "$CLJ_LOAD_CODE" >> $CLJTMPLOADFILE; fi
 if [ "$CLJ_REPL" = 1 ]; then  # user wants an interactive REPL
-	/bin/echo '"Welcome to your cljsh-lein-repls")' >> $CLJTMPLOADFILE;
+	/bin/echo '"Welcome to your lein-repls'"'"' repl")' >> $CLJTMPLOADFILE;
 else
 	/bin/echo ')'     >> $CLJTMPLOADFILE;
 fi

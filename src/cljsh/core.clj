@@ -8,31 +8,29 @@
 
 (ns cljsh.core)	
 
-(defn repl-no-prompt "prints no prompt for pure cli-usage" [] (printf "")(flush))
-(defn repl-ns-prompt [] (printf "%s=> " (ns-name *ns*))(flush))
-;;(defn repl-cwd-prompt [] (printf "%s > " @fs/cwd)(flush))
-(defn repl-hi-prompt [] (print "hi> ")(flush))
-(defn repl-nil-prompt [] nil)
-
 (defn current-thread [] (. Thread currentThread))
-(defn thread-id [a-thread] (.getId a-thread))
 
+;; place holder for argument passing thru cljsh invocation
 (def ^:dynamic *cljsh-args* "")
 
+
+;; repl prompt functions
+;; implementation keeps a map of thread, i.e. repl instance, and prompt preference.
+;; this feels kind of a hack - (binding...) would be better be requires deeper integration
+;; in lein-repl and/or clojure.main/repl code - maybe later...
+
+(defn repl-no-prompt "prints empty-string prompt for pure cli-usage" [] (printf "")(flush))
+(defn repl-ns-prompt "prints namespace prompt for interactive usage" [] (printf "%s=> " (ns-name *ns*))(flush))
+;;(defn repl-cwd-prompt [] (printf "%s > " @fs/cwd)(flush))
+(defn repl-nil-prompt [] nil)
+
 (def ^:dynamic *repl-thread-prompt-map* (atom {}))
-(def ^:dynamic *repl-result-print-map* (atom {}))
 
 (defn set-prompt 
 	"sets the prompt function associated with the current thread."
 	[prompt-fun]
 	(swap! *repl-thread-prompt-map* assoc (current-thread) prompt-fun)
 	prompt-fun)
-
-(defn set-repl-result-print 
-	"sets the eval-result print function associated with the current thread."
-	[print-fun]
-	(swap! *repl-result-print-map* assoc (current-thread) print-fun)
-	print-fun)
 
 (defn repl-thread-prompt 
 	"returns the prompt-function that is mapped to the current thread"
@@ -41,9 +39,26 @@
 		(if p
 			p
 			(if (= @*repl-thread-prompt-map* {})
+				;; if map is empty, we have the console so turn ns-prompt on
 				(set-prompt repl-ns-prompt)
+				;; by default no prompt
 				(set-prompt repl-nil-prompt)))))
-			
+
+;; this function setting is used inside of the repl(s) code 
+;; indirection needed because of all the delayed loading thru quoting
+(def ^:dynamic *repl-prompt* (fn [] ((repl-thread-prompt))))
+
+
+;; repl result printing functions
+
+(def ^:dynamic *repl-result-print-map* (atom {}))
+
+(defn set-repl-result-print 
+	"sets the eval-result print function associated with the current thread."
+	[print-fun]
+	(swap! *repl-result-print-map* assoc (current-thread) print-fun)
+	print-fun)
+
 
 (defn repl-result-print 
 	"returns the print-function that is mapped to the current thread"
@@ -52,15 +67,13 @@
 		(if p
 			p
 			(if (= @*repl-result-print-map* {})
+				;; if map is empty, we have the console so turn printing on
 				(set-repl-result-print prn)
+				;; by default turn printing off
 				(set-repl-result-print (fn [a]))))))
 			
 
-
-(def ^:dynamic *repl-prompt* (fn [] ((repl-thread-prompt))))
-
-;;(def ^:dynamic *repl-result-print* prn)
+;; this function setting is used inside of the repl(s) code 
+;; indirection needed because of all the delayed loading thru quoting
 (def ^:dynamic *repl-result-print* (fn [a] ((repl-result-print) a)))
 
-(defn -main [& args]
-	(println "Welcome to my project! These are your args:" args))

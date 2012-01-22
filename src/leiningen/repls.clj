@@ -205,21 +205,24 @@
        "localhost")])
 
 (defn repls
-  "Start a repl session either with the current project or standalone.
+  "Start a persistent repl-server console, and interact/eval/repl thru a lightweight command-line \"cljsh\" client.
 
-A socket-repl will also be launched in the background on a socket based on the
-:repl-port key in project.clj or chosen randomly. Running outside a project
-directory will start a standalone repl session."
+A socket-repl server is launched in the background with a console-like repl-session. 
+A separate lightweight \"cljsh\" command-line bash-client will send clojure code passed on the command line, thru stdin and/or in a file to the repl-server for eval. This setup allows you to use clojure for shell-scripts with almost zero-startup time.  
+Invoked from within the project's directory, cljsh will use that lein-project's config for the repl. Running outside any project, it will use a standalone repl session. (code based on leiningen's repl)
+See \"https://github.com/franks42/lein-repls\" for details and docs."
   ([] (repls nil))
   ([project]
      (when (and project (or (empty? (find-deps-files project))
                             (:checksum-deps project)))
        (deps project))
-     (let	[project (assoc project :project-init '(require 'cljsh.core))
+     (let	[ ;; project is modified to accomodate pre-loading of cljsh.core without having to change project.clj
+     			 project (assoc project :project-init '(require 'cljsh.core))
      			 [port host] (repl-socket-on project)
            server-form (apply repl-server project host port
                               (concat (:repl-options project)
                                       (:repl-options (user-settings))
+                                      ;; :prompt and :print are forced-set by functions defined in cljsh.core
                                       [:prompt 'cljsh.core/*repl-prompt*
                                        :print  'cljsh.core/*repl-result-print*]))
            ;; TODO: make this less awkward when we can break poll-repl-connection
