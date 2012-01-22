@@ -7,3 +7,5 @@ bin/tst.txt
 bin/upper.cljsh
 .lein_repls
 bin/t.sh
+bin/q.clj
+lein-repls-*.jar
