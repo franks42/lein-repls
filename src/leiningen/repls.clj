@@ -1,5 +1,5 @@
 (ns leiningen.repls
-  "Start a repl session either with the current project or standalone."
+  "Start a persistent repl-server console, and interact/eval/repl thru a lightweight command-line \"cljsh\" client."
   (:require [clojure.main]
   					[clojure.pprint]
   					;[lein-repls.core]
