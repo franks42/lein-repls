@@ -177,13 +177,16 @@ echo "=> that wants to be upper'ed" >> tst.txt
 # write the clojure filter code - note -t option for text processing for the #! directive
 # also you HAVE to close *in* in your script otherwise you'll wait a looong time
 # (note that there is no way to add a kill-switch automagically at the end of the code...)
+# possible alternative: (doseq [line (line-seq (java.io.BufferedReader. *in*))] (println line))
 cat <<"EOCLJ" > upper.cljsh
 #!/usr/bin/env cljsh -t
 (require 'clojure.string)
-(loop [l (read-line)] 
-	(when l 
-		(prn (clojure.string/upper-case l)) 
-		(recur (read-line))))
+;; (loop [l (read-line)] 
+;; 	(when l 
+;; 		(prn (clojure.string/upper-case l)) 
+;;		(recur (read-line))))
+(doseq [line (line-seq (java.io.BufferedReader. *in*))] 
+    (prn (clojure.string/upper-case line)))
 (.close *in*)
 EOCLJ
 chmod +x upper.cljsh
