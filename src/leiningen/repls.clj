@@ -2,6 +2,7 @@
   "Start a persistent repl-server console, and interact/eval/repl thru a lightweight command-line \"cljsh\" client."
   (:require [clojure.main]
   					[clojure.pprint]
+  					[clojure.java.shell]
   					;[lein-repls.core]
   					)
   ;;(:require [fs.core :as fs])
@@ -17,63 +18,6 @@
 
 (require 'cljsh.core)
 
-;;-----------------------------------------------------------------------------
-
-(defn repl-no-prompt "prints no prompt for pure cli-usage" [] (printf "")(flush))
-(defn repl-ns-prompt [] (printf "%s=> " (ns-name *ns*))(flush))
-;;(defn repl-cwd-prompt [] (printf "%s > " @fs/cwd)(flush))
-(defn repl-hi-prompt [] (print "hi> ")(flush))
-(defn repl-nil-prompt [] nil)
-
-(defn current-thread [] (. Thread currentThread))
-(defn thread-id [a-thread] (.getId a-thread))
-
-(def ^:dynamic *cljsh-args* "")
-
-(def ^:dynamic *repl-thread-prompt-map* (atom {}))
-(def ^:dynamic *repl-result-print-map* (atom {}))
-
-(defn set-prompt 
-	"sets the prompt function associated with the current thread."
-	[prompt-fun]
-	(swap! *repl-thread-prompt-map* assoc (current-thread) prompt-fun)
-	prompt-fun)
-
-(defn set-repl-result-print 
-	"sets the eval-result print function associated with the current thread."
-	[print-fun]
-	(swap! *repl-result-print-map* assoc (current-thread) print-fun)
-	print-fun)
-
-(defn repl-thread-prompt 
-	"returns the prompt-function that is mapped to the current thread"
-	[]
-	(let [p (get @*repl-thread-prompt-map* (current-thread))]
-		(if p
-			p
-			(if (= @*repl-thread-prompt-map* {})
-				(set-prompt repl-ns-prompt)
-				(set-prompt repl-nil-prompt)))))
-			
-
-(defn repl-result-print 
-	"returns the print-function that is mapped to the current thread"
-	[]
-	(let [p (get @*repl-result-print-map* (current-thread))]
-		(if p
-			p
-			(if (= @*repl-result-print-map* {})
-				(set-repl-result-print prn)
-				(set-repl-result-print (fn [a]))))))
-			
-
-
-(def ^:dynamic *repl-prompt* (fn [] ((repl-thread-prompt))))
-
-;;(def ^:dynamic *repl-result-print* prn)
-(def ^:dynamic *repl-result-print* (fn [a] ((repl-result-print) a)))
-
-;;-----------------------------------------------------------------------------
 
 (def retry-limit 200)
 
@@ -96,7 +40,9 @@
         ;; Suppress socket closed since it's part of normal operation
         caught `(fn [t#]
                   (when-not (instance? SocketException t#)
-                    (~(:caught options 'clojure.main/repl-caught) t#)))
+                    ;;(~(:caught options 'clojure.main/repl-caught) t#)))
+                    (~(:caught options 'cljsh.core/cljsh-repl-caught) t#)))
+                    
         ;; clojure.main/repl has no way to exit without signalling EOF,
         ;; which we can't do with a socket. We can't rebind skip-whitespace
         ;; in Clojure 1.3, so we have to duplicate the function
@@ -109,11 +55,7 @@
                       ;;(if (= ::exit input#) ; programmatically signal close
                       (if (= :leiningen.repl/exit input#) ; programmatically signal close
                         (do (.close *in*) request-exit#)
-                        input#))))
-				;;prompt `cljsh.core/*repl-prompt*
-				;;evalprint `cljsh.core/*repl-result-print*
-    ]
-    ;;(apply concat [:init init :caught caught :read read :print evalprint :prompt prompt]
+                        input#))))]
     (apply concat [:init init :caught caught :read read]
            (dissoc options :caught :init :read))))
 				
@@ -154,10 +96,9 @@
 			(if ~*trampoline?*
 				(clojure.main/repl ~@options)
 				(do (when-not ~*interactive?*
-						(println "repls-server started and listening on"
-							~host "port" ~port))
+					(println "## Clojure" (clojure-version) "- \"lein-repls\" console and server started on project" (str "\"" ~(:name project) " " ~(:version project) "\"") (str "(pid/host/port:" (binding [*ns* (find-ns (quote clojure.java.shell))] (eval (quote (:out (clojure.java.shell/sh "bash" "-c" (str "echo -n ${PPID}")))))) "/" ~host "/" ~port ") ##"))
 					;; block to avoid shutdown-agents
-					@(promise))))))
+					@(promise)))))))
 
 (defn copy-out-loop [reader]
   (let [buffer (make-array Character/TYPE 1000)]
@@ -223,17 +164,17 @@ See \"https://github.com/franks42/lein-repls\" for details and docs."
                               (concat (:repl-options project)
                                       (:repl-options (user-settings))
                                       ;; :prompt and :print are forced-set by functions defined in cljsh.core
-                                      [:prompt 'cljsh.core/*repl-prompt*
-                                       :print  'cljsh.core/*repl-result-print*]))
+                                      [:print  'cljsh.core/*repl-result-print*
+                                       :prompt 'cljsh.core/*repl-prompt*]))
            ;; TODO: make this less awkward when we can break poll-repl-connection
            retries (- retry-limit (or (:repl-retry-limit project)
                                         ((user-settings) :repl-retry-limit)
                                         retry-limit))]
      	(let [pwd (:out (clojure.java.shell/sh "bash" "-c" (str "echo -n `pwd`")))
        			pid (:out (clojure.java.shell/sh "bash" "-c" (str "echo -n ${PPID}")))
-       			lfname (str "echo export LEIN_REPL_PORT='" port "'" " >  " pwd "/.lein_repls")]
-      	 (clojure.java.shell/sh "bash" "-c" lfname)
-      	 (clojure.java.shell/sh "bash" "-c" (str "echo export LEIN_REPL_PID='" pid "'" " >>  " pwd "/.lein_repls"))
+       			lfname (str "echo export LEIN_REPL_PORT='" port "'" " >  " pwd "/.lein_repls")
+      	 		out2 (:out (clojure.java.shell/sh "bash" "-c" lfname))
+      	 		out3 (:out (clojure.java.shell/sh "bash" "-c" (str "echo export LEIN_REPL_PID='" pid "'" " >>  " pwd "/.lein_repls")))]
        )
        (if *trampoline?*
          (eval-in-project project server-form)
