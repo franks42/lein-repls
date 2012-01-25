@@ -102,14 +102,14 @@ echo '(println "=> four (pipe)")' | cljsh -c '(println "=> one (arg)")' -c '(pri
 #------------------------------------------------------------------------------
 
 # only a single clojure file is evaluated, which is the first argument that is not (part of) an option.
-# additional args after the file name are assigned to "cljsh.core/*cljsh-args*":
-echo '(println "=> additional args: " cljsh.core/*cljsh-args*)' > tst.clj
+# additional args after the file name are assigned to "cljsh.core/*cljsh-command-line-args*":
+echo '(println "=> additional args: " cljsh.core/*cljsh-command-line-args*)' > tst.clj
 cljsh tst.clj -a -b -c why -def not 
 #------------------------------------------------------------------------------
 # => additional args:  /Users/franks/Development/Clojure/cljsh/bin/tst.clj -a -b -c why -def not
 #------------------------------------------------------------------------------
 
-# "cljsh.core/*cljsh-args*" holds a string like "$0 $*" with the absolute file path 
+# "cljsh.core/*cljsh-command-line-args*" holds a string like "$0 $*" with the absolute file path 
 # of the clojure file as the 0th arg followed by any other positional args.
 # interpretation of those args is up to the Clojure code...
 
@@ -124,9 +124,9 @@ chmod +x tst.cljsh
 # => and that is two
 #------------------------------------------------------------------------------
 
-# we also have the command line arguments available thru "cljsh.core/*cljsh-args*":
+# we also have the command line arguments available thru "cljsh.core/*cljsh-command-line-args*":
 echo '#!/usr/bin/env cljsh' > tst.cljsh
-echo '(println "=> args passed with script:" cljsh.core/*cljsh-args*)' >> tst.cljsh
+echo '(println "=> args passed with script:" cljsh.core/*cljsh-command-line-args*)' >> tst.cljsh
 chmod +x tst.cljsh
 ./tst.cljsh -a b -cd efg
 #------------------------------------------------------------------------------
