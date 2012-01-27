@@ -21,7 +21,7 @@ CLJ_REPL_PROMPT_CODE='(cljsh.core/set-prompt cljsh.core/repl-ns-prompt)'
 LEIN_REPL_KILL_SWITCH=':leiningen.repl/exit'
 
 # rlwrap's clojure word completion in the repl use the following file
-CLJ_WORDS_FILE=${CLJ_WORDS_FILE:-"$HOME/.clj_completions"}
+RLWRAP_CLJ_WORDS_FILE=${RLWRAP_CLJ_WORDS_FILE:-"$HOME/.clj_completions"}
 
 # determine the directory of the associated project.clj, or $HOME if none.
 export LEIN_PROJECT_DIR=$(
@@ -64,14 +64,14 @@ if [[ -t 0 ]]; then CLJSH_STDIN="TERM"; fi
 while getopts "irwpghtm:c:s:e:" opt; do
   case $opt in
     c) 	# clojure code statements expected as options value
-    	if [ "${CLJ_CODE}" ]; then
+    	if [ -n "${CLJ_CODE}" ]; then
     		CLJ_CODE="${CLJ_CODE}\n$OPTARG";   # concat with newline to allow for multiple -c code
     	else
     		CLJ_CODE="$OPTARG";
     	fi
       ;;
     e) 	# clojure code statements expected as options value (same as c))
-    	if [ "${CLJ_CODE}" ]; then
+    	if [ -n "${CLJ_CODE}" ]; then
     		CLJ_CODE="${CLJ_CODE}\n$OPTARG";   # concat with newline to allow for multiple -c code
     	else
     		CLJ_CODE="$OPTARG";
@@ -127,7 +127,7 @@ while getopts "irwpghtm:c:s:e:" opt; do
 			hash socat 2>&-  || { echo >&2 "ERROR: \"socat\" is require for cljsh but not installed.";}
 			hash rlwrap 2>&- || { echo >&2 "ERROR: \"rlwrap\" is require for cljsh but not installed.";}
 			echo "`basename $0` -r                         # -r interactive repl session - equivalent of -ip " >&2;
-			echo "`basename $0` -c clojure-code            # -c eval the clojure-code in repl-server (equivalent to -c)" >&2;
+			echo "`basename $0` -c clojure-code            # -c eval the clojure-code in repl-server (equivalent to -e)" >&2;
 			echo "`basename $0` -e clojure-code            # -e eval the clojure-code in repl-server (equivalent to -c)" >&2;
 			echo "`basename $0` clojure-file               # load&eval clojure-file in repl-server" >&2;
 			echo "cat clojure-file | `basename $0`         # eval piped clojure-code in repl-server" >&2;
@@ -155,12 +155,13 @@ done
 
 # if needed, update the clojure completion words file before we do anything else
 if [ ${CLJ_REFRESH_COMPLETION:-0} -eq 1 ]; then
-	cljsh -e '(require (quote cljsh.complete)) (doall (map println (sort (set (cljsh.complete/completions "")))))' > "${CLJ_WORDS_FILE}"
+# 	cljsh -e '(require (quote cljsh.complete)) (doall (map println (sort (set (cljsh.complete/completions "")))))' > "${RLWRAP_CLJ_WORDS_FILE}"
+	cljsh -e '(require (quote cljsh.completion)) (cljsh.completion/print-all-words)' > "${RLWRAP_CLJ_WORDS_FILE}"
 fi
 
 # only include the rlwrap completions file directive if that file actually exists
-CLJ_FLAG_WORDS=""
-if [ -f "${CLJ_WORDS_FILE}" ]; then CLJ_FLAG_WORDS="-f ${CLJ_WORDS_FILE}"; fi
+RLWRAP_CLJ_WORDS_OPTION=""
+if [ -f "${RLWRAP_CLJ_WORDS_FILE}" ]; then RLWRAP_CLJ_WORDS_OPTION="-f ${RLWRAP_CLJ_WORDS_FILE}"; fi
 
 # after options processing with getopts, the remaining args are expected to be an optional single clojure-file name
 # followed by optional arguments associated with that clojure file
@@ -169,7 +170,7 @@ shift $(($OPTIND-1))
 # first arg should be a clojure file name followed by associated args
 CLJFILE="$1"
 CLJ_LOAD_CODE=""
-if [ "$CLJFILE" ]; then
+if [ -n "$CLJFILE" ]; then
 	if [ -f "$CLJFILE" ]; then   # check if file actually exists
 		# now write a load-file statement for that file in a tmp-file
 		CLJFNAME="$( basename $CLJFILE )"
@@ -187,7 +188,7 @@ fi
 
 # if we have no options and no file, i.e. no args at all, and are connected to the terminal, 
 # just start the repl
-if [[ ${OPTIND} -eq 1 && "${CLJFILE}" == "" && ${CLJSH_STDIN} == "TERM" ]]; then
+if [[ ${OPTIND} -eq 1 && -z "${CLJFILE}" && ${CLJSH_STDIN} == "TERM" ]]; then
 	CLJ_REPL_PROMPT=1
 	CLJ_EVAL_PRINT=1
 fi
@@ -196,9 +197,9 @@ fi
 # write the clojure code for repl, eval-print and command-line code into a tmp-file
 CLJTMPFILE=`mktemp -t ${CLJ_TMP_FNAME}` || exit 1
 if [ ${CLJ_EVAL_PRINT:-0} -eq 1 ]; then /bin/echo "$CLJ_EVAL_PRINT_CODE"  >> $CLJTMPFILE; fi
-if [ "${CLJ_ARGS_CODE}" ];  then /bin/echo "$CLJ_ARGS_CODE"   >> $CLJTMPFILE; fi
+if [ -n "${CLJ_ARGS_CODE}" ];  then /bin/echo "$CLJ_ARGS_CODE"   >> $CLJTMPFILE; fi
 if [ ${CLJ_REPL_PROMPT:-0} -eq 1 ];  then /bin/echo "$CLJ_REPL_PROMPT_CODE"   >> $CLJTMPFILE; fi
-if [ "${CLJ_CODE}" ]; then 
+if [ -n "${CLJ_CODE}" ]; then 
 	echo "${CLJ_CODE}"   >> $CLJTMPFILE;
 	if [ ${CLJ_STDIN_TEXT:-0} = 1 ]; then
 		# if we expect arbitrary data from stdin, then we can close stdin and send the kill-switch at the end
@@ -211,11 +212,11 @@ fi
 CLJ_LOAD_TMP_CODE='(load-file "'${CLJTMPFILE}'")'
 CLJTMPLOADFILE=`mktemp -t ${CLJ_TMP_FNAME}` || exit 1
 # create the tmp-file for the load-file statements and the welcome message
-/bin/echo -n  '(do ' >> $CLJTMPLOADFILE
-/bin/echo -n  "$CLJ_LOAD_TMP_CODE" >> $CLJTMPLOADFILE
-if [ "" != "$CLJ_LOAD_CODE" ]; then /bin/echo -n  "$CLJ_LOAD_CODE" >> $CLJTMPLOADFILE; fi
+/bin/echo -n  '(do ' >> ${CLJTMPLOADFILE}
+/bin/echo -n  "${CLJ_LOAD_TMP_CODE}" >> $CLJTMPLOADFILE
+if [ -n "${CLJ_LOAD_CODE}" ]; then /bin/echo -n  "${CLJ_LOAD_CODE}" >> ${CLJTMPLOADFILE}; fi
 if [ ${CLJ_REPL_PROMPT:-0} = 1 ]; then  # user wants an interactive REPL
-	/bin/echo '"Welcome to your lein-repls'"'"' Clojure repl-client")' >> $CLJTMPLOADFILE;
+	/bin/echo '(str "Welcome to your Clojure (" (clojure-version) ") lein-repls (" cljsh.core/lein-repls-version ") client"))' >> $CLJTMPLOADFILE;
 else
 	/bin/echo ')'     >> $CLJTMPLOADFILE;
 fi
@@ -232,7 +233,7 @@ if [ ${CLJ_REPL_PROMPT:-0} = 1 ]; then  # user wants an interactive REPL
 	# max task time doesn't seem to affect interactive repl, but does affect the delay of ctrl-d
 	CLJSH_MAXTIME="0.1"
 	
-	rlwrap -p Red -R -m " \ " -q'"' -b "(){}[],^%$#@\";:'\\" ${CLJ_FLAG_WORDS} bash -c "cat $CLJTMPLOADFILE - | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT}"
+	rlwrap -p ${RLWRAP_PROMPT_COLOR:-"Red"} -R -m " \ " -q'"' -b "(){}[],^%$#@\";:'\\" ${RLWRAP_CLJ_WORDS_OPTION} bash -c "cat $CLJTMPLOADFILE - | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT}"
 	
 else  # no REPL, nothing interactive
 

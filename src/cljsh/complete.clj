@@ -126,7 +126,7 @@
 						(let [svs (.split sv "/")
 									n (count svs)
 									f (first svs)]
-							(when-not (or (> n 2) (= f ""))
+							(when-not (or (> n 2) ( = f ""))
 								(if (= n 1)
 									(fqn-str (symbol f))
 									(fqn-str (symbol f) (symbol (second svs))))))
@@ -137,7 +137,9 @@
 	([s1 s2]
 		"ok..."
 	))
-		
+(defn ns+var=>str [ns]
+	(let [ns (find-ns ns)] (sort (map #(str ns "/" %) (keys (ns-publics ns))))))
+
 ;	(if-let [v  (or (and (var? sv) sv) 
 ;									(and (symbol? sv) (resolve sv))
 ;									(and (string? sv) (resolve (symbol sv))))]

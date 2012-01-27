@@ -6,9 +6,15 @@
 ;; the terms of this license.
 ;; You must not remove this notice, or any other, from this software.
 
-(ns cljsh.core)	
-(require 'clojure.main)
+(ns cljsh.core
+  ;(:use (swank util core commands))
+	(:require [clojure.main]
+						[cljsh.complete]
+						[cljsh.completion]
+						;;[swank.commands.completion]
+						))
 
+(defn jjj [] (cljsh.completion/potential-ns))
 
 ;; note that we have to keep this in sync with the project.clj entry
 (def lein-repls-version "1.4.0-SNAPSHOT")
