@@ -4,11 +4,11 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>lein-repls</groupId>
   <artifactId>lein-repls</artifactId>
-  <version>1.5.0-SNAPSHOT</version>
+  <version>1.6.0</version>
   <name>lein-repls</name>
   <description>A leiningen plugin to start a persistent repl server for use with cljsh</description>
   <scm>
-    <tag>340ac70af916bb34cae9872bc50e2e0f1b0ffc29</tag>
+    <tag>7b12f264315be4abeb0bbf0dc2024803be8dba7b</tag>
   </scm>
   <build>
     <sourceDirectory>src</sourceDirectory>

@@ -11,7 +11,7 @@
 
 
 ;; note that we have to keep this in sync with the project.clj entry
-(def lein-repls-version "1.5.0-SNAPSHOT")
+(def lein-repls-version "1.6.0")
 
 (defn current-thread [] (. Thread currentThread))
 
