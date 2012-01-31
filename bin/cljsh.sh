@@ -8,11 +8,12 @@
 # the terms of this license.
 # You must not remove this notice, or any other, from this software.
 
+###############################################################################
 # "cljsh" is a bash shell script that interacts with Leiningen's plugin "repls".
 # It allows the user to submit Clojure statement and Clojure script files
 # to a persistent networked repl for evaluation.
 
-CLJSH_VERSION="0.9"
+CLJSH_VERSION="0.99"
 
 # util functions
 
@@ -75,6 +76,10 @@ CLJSH_STDIN="REDIRECTED"
 if [[ -p /dev/stdin ]]; then CLJSH_STDIN="PIPE"; fi
 if [[ -t 0 ]]; then CLJSH_STDIN="TERM"; fi
 
+###############################################################################
+# Option processing.
+
+# file that will hold clj-statements associated with cmd-line options
 CLJ_CODE=`mktemp -t ${CLJ_TMP_FNAME}` || exit 1
 CLJ_CODE_BEFORE=${CLJ_CODE}
 CLJ_CODE_AFTER=
@@ -217,7 +222,7 @@ if [ -n "$CLJFILE" ]; then
 	echo '(load-file "'"${CLJFILEFP}"'")' >> ${CLJ_CODE}
 fi
 
-# special cases
+# special cases for options
 
 # no options, no clj-file and connected to the terminal => assume interactive repl
 if [[ ${OPTIND} -eq 1 && -z "${CLJFILE}" && ${CLJSH_STDIN} == "TERM" ]]; then
@@ -226,7 +231,7 @@ if [[ ${OPTIND} -eq 1 && -z "${CLJFILE}" && ${CLJSH_STDIN} == "TERM" ]]; then
 	echo "${CLJ_EVAL_PRINT_CODE}" >> ${CLJ_CODE}
 fi
 
-# welcome message for interactive repl
+# add welcome message for interactive repl
 if [ ${CLJ_REPL_PROMPT:-0} = 1 ]; then
 	/bin/echo '(str "Welcome to your Clojure (" (clojure-version) ") lein-repls (" cljsh.core/lein-repls-version ") client!")' >> ${CLJ_CODE};
 fi
@@ -246,8 +251,7 @@ fi
 
 ###############################################################################
 # Load File Generation
-# write clj-code first in a file, and then load thru second file
-# we get the benefit of line# debug in stacktrace
+# load code-file thru second file => benefit of line# debug in stacktraces
 
 CLJ_BEFORE_LOAD=`mktemp -t ${CLJ_TMP_FNAME}` || exit 1
 /bin/echo  '(load-file "'${CLJ_CODE_BEFORE}'")' >> $CLJ_BEFORE_LOAD
@@ -296,7 +300,7 @@ else  # no REPL, nothing interactive
 			# user's code is responsible for closing *in* to indicate eof as we cannot deduce it to use the kill-switch
 			exec cat ${CLJ_BEFORE_LOAD} - | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT};
 		
-	else   # expect clojure code to be piped-in from stdin and kill/end the session after that
+	else   # expect clojure code to be piped-in from stdin and kill&end the session after that
 
 			# because the repl keeps reading from stdin for clojure-statements, we can append the kill-switch at the end
 			exec cat ${CLJ_BEFORE_LOAD} - ${CLJ_AFTER_LOAD} ${CLJ_KILL_FILE} | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT};

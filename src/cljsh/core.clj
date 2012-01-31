@@ -7,17 +7,11 @@
 ;; You must not remove this notice, or any other, from this software.
 
 (ns cljsh.core
-  ;(:use (swank util core commands))
-	(:require [clojure.main]
-						[cljsh.complete]
-						[cljsh.completion]
-						;;[swank.commands.completion]
-						))
+	(:require [clojure.main]))
 
-(defn jjj [] (cljsh.completion/potential-ns))
 
 ;; note that we have to keep this in sync with the project.clj entry
-(def lein-repls-version "1.4.0-SNAPSHOT")
+(def lein-repls-version "1.5.0-SNAPSHOT")
 
 (defn current-thread [] (. Thread currentThread))
 
@@ -79,7 +73,6 @@
 	(swap! *repl-result-print-map* assoc (current-thread) print-fun)
 	print-fun)
 
-
 (defn repl-result-print 
 	"returns the print-function that is mapped to the current thread"
 	[]
@@ -91,25 +84,22 @@
 				(set-repl-result-print prn)
 				;; by default turn printing off
 				(set-repl-result-print (fn [&a]))))))
-			
 
 ;; this function setting is used inside of the repl(s) code 
 ;; indirection needed because of all the delayed loading thru quoting
 (def ^:dynamic *repl-result-print* (fn [a] ((repl-result-print) a)))
 
 
-;; see if we can redirect the error messages...
+;; redirect the error messages from the stacktraces...
+
 ;;if we do not want a repl-prompt, we infer that we do not want the error messages to stderr but to the *console-err*
 ;; any errors in scripts passed to cljsh will be shown on the console.
+;; still the reader's error messages are not redirected... todo.
 
-(defn cljsh-repl-caught [e]
+(defn cljsh-repl-caught 
+  "Set in leiningen.repls/repl-options and hooks in before clojure.main/repl-caught to redirect stderr if needed. If no repl prompt, then redirect the stderr to the console's, otherwise just forward."
+  [e]
 	(if (= (get @*repl-thread-prompt-map* (current-thread)) repl-nil-prompt)
 		(binding [*err* cljsh.core/*console-err*]
 			(clojure.main/repl-caught e))
 		(clojure.main/repl-caught e)))
-		
-;;
-(defn completion-words []
-	(let [completions (mapcat (comp keys ns-publics) (all-ns))
-				all-completions (concat completions ['if 'def])] ;; special forms
-		(println (apply str (interpose \newline (sort all-completions))))))

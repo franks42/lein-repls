@@ -6,14 +6,11 @@
 
 ;; copied swank.command.completions with all dependent code from swank.*
 ;; to avoid direct dependencies on the swank-clojure code base.
+;; simple clojure-swank dependency in project.clj doesn't seem to work
 ;; too bad those function are not moved into a separate library
 ;; at the end of the file there are some convenient functions to create 
 ;; the rlwrap word list.
 
-;  (:use (swank util core commands)
-;        (swank.util string clojure java class-browse)))
-
-;; swank.core
 
 (defn maybe-ns [package]
   (cond
@@ -279,6 +276,7 @@
             (potential-classes ns)
             (potential-dot ns))))
 
+
 ;; custom additions for cljsh and rlwarp
 ;; for the rlwrap word list, we want all words from ns-map
 ;; and all fqn's from all public keys for each ns in all-ns
@@ -298,7 +296,7 @@
 								(map 	#(cljsh.completion/potential-completions % "") 
 											(map 	#(symbol (ns-name %)) 
 														(all-ns))))))))
-														
+
 (defn print-all-words []
 	(doall (map println (sort (concat
 		special-forms
@@ -306,5 +304,3 @@
 		(flatten (map	#(cljsh.completion/potential-completions % "") 
 									(map 	#(symbol (ns-name %)) 
 												(all-ns)))))))))
-
-
