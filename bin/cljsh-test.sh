@@ -102,11 +102,12 @@ echo '(println "=> four (pipe)")' | cljsh -c '(println "=> one (arg)")' -c '(pri
 #------------------------------------------------------------------------------
 
 # only a single clojure file is evaluated, which is the first argument that is not (part of) an option.
-# additional args after the file name are assigned to "cljsh.core/*cljsh-command-line-args*":
-echo '(println "=> additional args: " cljsh.core/*cljsh-command-line-args*)' > tst.clj
+# additional args after the file name are assigned to "cljsh.core/*cljsh-command-line-args*",
+# while the file name itself is assigned to "cljsh.core/*cljsh-command-line-file*":
+echo '(println "=> additional args: " cljsh.core/*cljsh-command-line-file* cljsh.core/*cljsh-command-line-args*)' > tst.clj
 cljsh tst.clj -a -b -c why -def not 
 #------------------------------------------------------------------------------
-# => additional args:  /Users/franks/Development/Clojure/cljsh/bin/tst.clj -a -b -c why -def not
+# => additional args:  /Users/franks/Development/Clojure/lein-repls/bin/tst.clj -a -b -c why -def not
 #------------------------------------------------------------------------------
 
 # "cljsh.core/*cljsh-command-line-args*" holds a string like "$0 $*" with the absolute file path 
@@ -126,11 +127,11 @@ chmod +x tst.cljsh
 
 # we also have the command line arguments available thru "cljsh.core/*cljsh-command-line-args*":
 echo '#!/usr/bin/env cljsh' > tst.cljsh
-echo '(println "=> args passed with script:" cljsh.core/*cljsh-command-line-args*)' >> tst.cljsh
+echo '(println "=> args passed with script:" cljsh.core/*cljsh-command-line-file* cljsh.core/*cljsh-command-line-args*)' >> tst.cljsh
 chmod +x tst.cljsh
 ./tst.cljsh -a b -cd efg
 #------------------------------------------------------------------------------
-# => args passed with script: /Users/franks/Development/Clojure/cljsh/bin/tst.cljsh -a b -cd efg
+# => args passed with script: /Users/franks/Development/Clojure/lein-repls/bin/tst.cljsh -a b -cd efg
 #------------------------------------------------------------------------------
 
 # alternatively, we can use the "Here Document" construct to easily write clojure code in bash shell scripts

@@ -9,3 +9,5 @@ bin/upper.cljsh
 bin/t.sh
 bin/q.clj
 lein-repls-*.jar
+bin/cljsh-testing.worksheet
+bin/t.clj

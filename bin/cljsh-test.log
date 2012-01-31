@@ -13,12 +13,14 @@
 #------------------------------------------------------------------------------
 # evaluate clojure-code passed as command line argument with -c
 cljsh -c '(println "=> hello")'
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.SUKP1am7
 => hello
 #------------------------------------------------------------------------------
 # => hello
 #------------------------------------------------------------------------------
 # multiple statements can be added thru multiple -c directives
 cljsh -c '(println "=> hello")' -c '(println "=> there")'
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.yuWSBAsU
 => hello
 => there
 #------------------------------------------------------------------------------
@@ -28,12 +30,14 @@ cljsh -c '(println "=> hello")' -c '(println "=> there")'
 
 # Note that by default, the eval results are not printed, which can be confusing:
 cljsh -c '"=> hi - you cannot see me"'
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.4lhFegMB
 #------------------------------------------------------------------------------
 # => (...nothing...)
 #------------------------------------------------------------------------------
 
 # We can turn on the eval result printing with the -p flag:
 cljsh -pc '"now you can see me"'
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.3Gjxyvi9
 "now you can see me"
 #------------------------------------------------------------------------------
 # "now you can see me"
@@ -42,6 +46,7 @@ cljsh -pc '"now you can see me"'
 # a disadvantage of the eval result printing is that you get those results (line "nil"s)
 # in your output mixed together with what you actually explicitly "print":
 cljsh -pc '(println "=> this is followed by a nil on the next line as the result from evaluating println")'
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.P9HqQk0B
 => this is followed by a nil on the next line as the result from evaluating println
 nil
 #------------------------------------------------------------------------------
@@ -51,6 +56,7 @@ nil
 
 # by turning the eval result printing off (default), the only thing printed is what we explicitly write to stdout
 cljsh -c '(println "=> this is NOT followed by a nil on the next line")'
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.CIEKdTGE
 => this is NOT followed by a nil on the next line
 #------------------------------------------------------------------------------
 # => this is NOT followed by a nil on the next line
@@ -58,11 +64,13 @@ cljsh -c '(println "=> this is NOT followed by a nil on the next line")'
 
 # cljsh interacts with a persistent repl - any changes to the repl-state are preserved across cljsh invocations:
 cljsh -pc '(defn jaja [t] (println t))'
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.dkHlTLFe
 #'user/jaja
 #------------------------------------------------------------------------------
 #  #'user/jaja
 #------------------------------------------------------------------------------
 cljsh -c '(jaja "=> hello again")'
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.z51IVWcG
 => hello again
 #------------------------------------------------------------------------------
 # => hello again
@@ -70,6 +78,7 @@ cljsh -c '(jaja "=> hello again")'
 
 # we can pipe the clojure code in thru stdin:
 echo '(println "=> coming in from the left...")' | cljsh
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.kepEUJxw
 => coming in from the left...
 #------------------------------------------------------------------------------
 # => coming in from the left...
@@ -77,6 +86,7 @@ echo '(println "=> coming in from the left...")' | cljsh
 
 # or both as command line and piped code:
 echo '(println "=> then from pipe")' | cljsh -c '(println "=> first from arg")'
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.aFu9ABPv
 => first from arg
 => then from pipe
 #------------------------------------------------------------------------------
@@ -87,6 +97,7 @@ echo '(println "=> then from pipe")' | cljsh -c '(println "=> first from arg")'
 # we can also read from a single clojure file:
 echo '(println "=> this is from the tst.clj file")' > tst.clj
 cljsh tst.clj
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.CNsxgr6j
 => this is from the tst.clj file
 #------------------------------------------------------------------------------
 # => this is from the tst.clj file
@@ -95,6 +106,7 @@ cljsh tst.clj
 # watch the sequence of code eval:
 echo '(println "=> three (file)")' > tst.clj
 echo '(println "=> four (pipe)")' | cljsh -c '(println "=> one (arg)")' -c '(println "=> two (next arg)")' tst.clj
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.8kmODiKK
 => one (arg)
 => two (next arg)
 => three (file)
@@ -107,12 +119,14 @@ echo '(println "=> four (pipe)")' | cljsh -c '(println "=> one (arg)")' -c '(pri
 #------------------------------------------------------------------------------
 
 # only a single clojure file is evaluated, which is the first argument that is not (part of) an option.
-# additional args after the file name are assigned to "cljsh.core/*cljsh-command-line-args*":
-echo '(println "=> additional args: " cljsh.core/*cljsh-command-line-args*)' > tst.clj
+# additional args after the file name are assigned to "cljsh.core/*cljsh-command-line-args*",
+# while the file name itself is assigned to "cljsh.core/*cljsh-command-line-file*":
+echo '(println "=> additional args: " cljsh.core/*cljsh-command-line-file* cljsh.core/*cljsh-command-line-args*)' > tst.clj
 cljsh tst.clj -a -b -c why -def not 
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.IK2MDBcA
 => additional args:  /Users/franks/Development/Clojure/lein-repls/bin/tst.clj -a -b -c why -def not
 #------------------------------------------------------------------------------
-# => additional args:  /Users/franks/Development/Clojure/cljsh/bin/tst.clj -a -b -c why -def not
+# => additional args:  /Users/franks/Development/Clojure/lein-repls/bin/tst.clj -a -b -c why -def not
 #------------------------------------------------------------------------------
 
 # "cljsh.core/*cljsh-command-line-args*" holds a string like "$0 $*" with the absolute file path 
@@ -125,6 +139,7 @@ echo '(println "=> one")' >> tst.cljsh
 echo '(println "=> and that is two")' >> tst.cljsh
 chmod +x tst.cljsh
 ./tst.cljsh
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.x7rd6PBP
 => one
 => and that is two
 #------------------------------------------------------------------------------
@@ -134,12 +149,13 @@ chmod +x tst.cljsh
 
 # we also have the command line arguments available thru "cljsh.core/*cljsh-command-line-args*":
 echo '#!/usr/bin/env cljsh' > tst.cljsh
-echo '(println "=> args passed with script:" cljsh.core/*cljsh-command-line-args*)' >> tst.cljsh
+echo '(println "=> args passed with script:" cljsh.core/*cljsh-command-line-file* cljsh.core/*cljsh-command-line-args*)' >> tst.cljsh
 chmod +x tst.cljsh
 ./tst.cljsh -a b -cd efg
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.boCbBcPk
 => args passed with script: /Users/franks/Development/Clojure/lein-repls/bin/tst.cljsh -a b -cd efg
 #------------------------------------------------------------------------------
-# => args passed with script: /Users/franks/Development/Clojure/cljsh/bin/tst.cljsh -a b -cd efg
+# => args passed with script: /Users/franks/Development/Clojure/lein-repls/bin/tst.cljsh -a b -cd efg
 #------------------------------------------------------------------------------
 
 # alternatively, we can use the "Here Document" construct to easily write clojure code in bash shell scripts
@@ -151,6 +167,7 @@ cljsh <<"EOCLJ"
 	(println "=> two")
 	(prn "=> three"))
 EOCLJ
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.P0Mwa7vr
 => ${ONE}
 => two
 "=> three"
@@ -168,6 +185,7 @@ cljsh <<EOCLJ
 	(println "=> two")
 	(prn "=> three"))
 EOCLJ
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.7AF8wN33
 => one
 => two
 "=> three"
@@ -180,6 +198,7 @@ EOCLJ
 # we can also feed any arbitrary data stream thru stdin that we process with a clojure script, 
 # but we have to indicate that what comes in thru stdin is not clojure code with the -t option:
 echo "=> this is a stream of text and no clojure code" | cljsh -t -c '(prn (read-line))'
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.YfT2npWz
 "=> this is a stream of text and no clojure code"
 #------------------------------------------------------------------------------
 # "=> this is a stream of text and no clojure code"
@@ -208,6 +227,7 @@ EOCLJ
 chmod +x upper.cljsh
 # test the filter:
 cat tst.txt | ./upper.cljsh
+CLJ_BEFORE_LOAD=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/T/cljsh.P993j25b
 "=> THIS IS A STREAM OF TEXT"
 "=> ALL LOWER CASE"
 "=> THAT WANTS TO BE UPPER'ED"
@@ -219,6 +239,7 @@ cat tst.txt | ./upper.cljsh
 
 # see if it behaves well as a true unix filter by lowering it again:
 cat tst.txt | ./upper.cljsh | tr '[:upper:]' '[:lower:]'
+clj_before_load=/var/folders/th/v9cn0zjn1830736cjqg8l9jm0000gn/t/cljsh.bxxu7ltq
 "=> this is a stream of text"
 "=> all lower case"
 "=> that wants to be upper'ed"
