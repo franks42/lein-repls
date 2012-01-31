@@ -69,7 +69,7 @@ In a different, separate terminal session, we will work with the cljsh repls-cli
 	user=>
 
 
-For examples of most supported features, please take a look at the [cljsh-test.sh](https://github.com/franks42/cljsh/blob/master/bin/cljsh-test.sh) ("https://github.com/franks42/cljsh/blob/master/bin/cljsh-test.sh") in the distro's bin directory. Even better, run cljsh-test.sh to see if all works well.
+For examples of most supported features, please take a look at the [cljsh-test.sh](https://raw.github.com/franks42/lein-repls/master/bin/cljsh-test.sh) ("https://raw.github.com/franks42/lein-repls/master/bin/cljsh-test.sh") in the distro's bin directory. Even better, run cljsh-test.sh to see if all works well.
 
 
 ## Architecture & Implementation
