@@ -6,7 +6,7 @@ The advantage of using socat and the networked repl is that there is no real pro
 
 The repl-server is based on Leiningen's native "repl" task, which is basically refactored as a true plugin "repls", to which a number of hooks are added to turn the repl-prompt and eval-result printing on and off. By not printing the prompt and eval-result, it's easier to write clojure-scripts that rely on its side-effects like printing to stdout. "repls" is installed and run as a normal Leiningen plugin (browse clojars for the latest "lein-repls" version available):
 
-  $ lein plugin install repls 1.6.0  
+  $ lein plugin install lein-repls 1.6.0  
   $ lein repls  
   
 cljsh's main purpose is sending clj-statements and/or clj-files to the persistent repl. That clj-code is specified as command line arguments like:
