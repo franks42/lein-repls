@@ -111,7 +111,7 @@ while [ "${!OPTIND}" == "-" ] || getopts ":drwpPghtvm:c:s:e:f:i:" opt; do
     	CLJ_REPL_PROMPT=1
       ;;
     w) 	# refresh word completion file with current repl-context
-			cljsh -f ${CLJ_CODE} -e ${CLJ_PRINT_CLJ_WORDS_CODE} > "${RLWRAP_CLJ_WORDS_FILE}"
+			cljsh -f "${CLJ_CODE}" -e "${CLJ_PRINT_CLJ_WORDS_CODE}" > "${RLWRAP_CLJ_WORDS_FILE}"
       ;;
     t) 	# text/arbitrary data and no clojure-code expected from stdin, so don't eval stdin.
     	CLJ_STDIN_TEXT=1
