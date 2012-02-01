@@ -6,15 +6,13 @@ The advantage of using socat and the networked repl is that there is no real pro
 
 The repl-server is based on Leiningen's native "repl" task, which is basically refactored as a true plugin "repls", to which a number of hooks are added to turn the repl-prompt and eval-result printing on and off. By not printing the prompt and eval-result, it's easier to write clojure-scripts that rely on its side-effects like printing to stdout. "repls" is installed and run as a normal Leiningen plugin (browse clojars for the latest "lein-repls" version available):
 
-  $ lein plugin install lein-repls 1.6.0  
-  $ lein repls  
-  
-cljsh's main purpose is sending clj-statements and/or clj-files to the persistent repl. That clj-code is specified as command line arguments like:
-  
-  $ cat three.clj | cljsh -c '(println "one")' -f two.clj - four.clj -args  
-	
-The sequence of positional arguments determine the evalation sequence, where stdin is indicated by "-" (default last). The first non-option should indicate a clj-file with optional args.
-(see cljsh -h) The options should reflect most clojure invocation flavors.
+"cljsh"'s main purpose is sending clj-statements and/or clj-files to the persistent repl. That clj-code is specified as command line arguments like:
+
+
+  	$ cat three.clj | cljsh -c '(println "one")' -f two.clj - four.clj -args  
+
+
+The sequence of positional arguments determine the evalation sequence, where stdin is indicated by "-" (default last). The first non-option should indicate a clj-file with optional args. (see cljsh -h) The options should reflect most clojure invocation flavors.
 
 In addition, cljsh also offers an interactive repl mode, that is similar to the other repls out there. The difference again is that it's lightweight and allows for initialization scripts before the interactive session. In addition, it will use rlwrap with word completion. The word completion file can easily be updated to reflect the context of your session. (it still is a poor-man's completion, though, compared to "real" context sensitive completers as in emacs...). It may also work with JLine, but I have not tested that.
 
@@ -22,51 +20,58 @@ In addition, cljsh also offers an interactive repl mode, that is similar to the 
 
 "cljsh" needs an installed version of "socat" and optionally "rlwrap".
 An easy way is thru ports/macports on macosx, but substitute your own brewing mechanism as you like:
-  
-  $ sudo port install socat  
-  $ sudo port install rlwrap  
+
+
+    $ sudo port install socat  
+    $ sudo port install rlwrap  
 
 
 The "repls" plugin is installed thru the standard Leiningen mechanism:
-  
-  $ lein plugin install lein-repls 1.6.0  
-  $ lein repls  
-  REPL started; server listening on 0.0.0.0 port 12357  
-  user=>  
 
-This will start the persistent repl server, and will give you a "console" with a standard repl interaction. cljsh will use that repl server listening on the indicated port.
 
-Lastly, you will have to download the cljsh shell script and put it somewhere on your path:
+    $ lein plugin install lein-repls 1.6.0  
 
-  curl https://raw.github.com/franks42/lein-repls/master/bin/cljsh.sh > cljsh  
-  chmod +x cljsh  
-	mv cljsh /somewhere-on-your-path/cljsh  
-	
+
+Lastly, you will have to download the cljsh shell script and put it somewhere on your path:  
+
+
+   	$ curl https://raw.github.com/franks42/lein-repls/master/bin/cljsh.sh > cljsh  
+   	$ chmod +x cljsh  
+   	$ mv cljsh /somewhere-on-your-path/cljsh  
+
+
 Alternatively, you can clone the github repo: "https://github.com/franks42/lein-repls"
 	
-That's all... you're ready to repl.
+That's all... now you're ready to repl.
 
 ## Usage
 
 Go to one of your clj-project, and start the repls server:
 
-	$ lein repls  
-	REPL started; server listening on 0.0.0.0 port 12357 
-	user=>  
-	
+
+		$ lein repls  
+		REPL started; server listening on 0.0.0.0 port 12357 
+		user=>  
+
+
+This will start the persistent repl server, and will give you a "console" with a standard repl interaction. cljsh will use that repl server listening on the indicated port.
+
 In a different, separate terminal session, we will work with the cljsh repls-client. Make sure you are within the project's directory tree when you invoke cljsh, such that cljsh will automatically pickup the server's port number.
 
 ### evaluate clojure-code passed as command line argument
 
-	$ cljsh -c '(println "hello")'
-	hello
-	$
+
+		$ cljsh -c '(println "hello")'
+		hello
+		$
+
 
 ### to start a interactive repl-session:
 
-	$ cljsh -r
-	"Welcome to your cljsh-lein-repl"
-	user=>
+
+		$ cljsh -r
+		"Welcome to your cljsh-lein-repl"
+		user=>
 
 
 For examples of most supported features, please take a look at the [cljsh-test.sh](https://raw.github.com/franks42/lein-repls/master/bin/cljsh-test.sh) ("https://raw.github.com/franks42/lein-repls/master/bin/cljsh-test.sh") in the distro's bin directory. Even better, run cljsh-test.sh to see if all works well.
