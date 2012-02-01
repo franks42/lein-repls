@@ -1,4 +1,4 @@
-#CLJSH: A lightweight Clojure Shell - a bash-shell client that uses socat and optionally rlwrap, to interact with a persistent repl-server.
+#REPLS & CLJSH: "repls" is a lein plugin to launch a persistent repl-server and "cljsh" is the associated lightweight command-line client to send and evaluate clojure code on that repl-server.
 
 Cljsh is a bash shell script that interacts with a persistent Leiningen's networked repl-server. It allows the user to submit Clojure statement and Clojure script files to the persistent networked repl for evaluation. The script uses socat to make the networked repl appear local: the repl-server's stdin and stdout are transparently extended to cljsh. Socat also makes this client lightweight and fast, very much like the ruby-based cake-client or nailgun. The Clojure statements are sent thru socat to the persistent Leiningen-repl-server, and the results are brought back thru socat to stdout.
 
