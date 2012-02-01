@@ -291,14 +291,14 @@ if [ ${CLJ_REPL_PROMPT:-0} = 1 ]; then  # user wants an interactive REPL
 	
 else  # no REPL, nothing interactive
 
-	if [ "${CLJSH_STDIN}" == "TERM" ]; then # not interactive, so no code will come-in thru stdin
-
-		exec cat "${CLJ_BEFORE_LOAD}" "${CLJ_KILL_FILE}" | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT};
-		
-	elif [ ${CLJ_STDIN_TEXT:-0} -eq 1 ]; then   # arbitrary data but no code coming from stdin
+	if [ ${CLJ_STDIN_TEXT:-0} -eq 1 ]; then   # arbitrary data but no code coming from stdin
 
 			# user's code is responsible for closing *in* to indicate eof as we cannot deduce it to use the kill-switch
 			exec cat ${CLJ_BEFORE_LOAD} - | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT};
+		
+	elif [ "${CLJSH_STDIN}" == "TERM" ]; then # not interactive, so no code will come-in thru stdin
+
+		exec cat "${CLJ_BEFORE_LOAD}" "${CLJ_KILL_FILE}" | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT};
 		
 	else   # expect clojure code to be piped-in from stdin and kill&end the session after that
 
