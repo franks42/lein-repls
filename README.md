@@ -94,6 +94,10 @@ The clj-code passed in thru stdin to cljsh, is also piped-thru to the repl-serve
 Cljsh does also send a few more clojure statements transparently to the repl-server that are related to functionality like turning the repl-prompt on, turning the eval-result printing on, communicating the command line options passed with a clojure file, and a kill-switch to indicate the last clojure statement has been eval'ed.
 See the cljsh-test.sh for more explanations about those.
 
+## Acknowledgements
+
+Thanks to "technomancy" for leiningen and the irc-clojure community for the great real-time support.
+
 ## License
 
 Copyright (C) 2011 - Frank Siebenlist
