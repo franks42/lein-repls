@@ -149,7 +149,7 @@ CLJ_CODE_BEFORE=${CLJ_CODE}
 CLJ_CODE_AFTER=
 
 # command line option processing
-while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtvm:c:s:e:f:i:" opt; do
+while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtvVm:c:s:e:f:i:" opt; do
   case $opt in
     c) 	# clojure code statements expected as options value
     	echo "${OPTARG}" >> ${CLJ_CODE}
@@ -223,6 +223,10 @@ while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtvm:c:s:e:f:i:" opt; do
       ;;
     v) 	# version information
     	displayAlert Clojure Shell version: "${CLJSH_VERSION}";
+    	exit 0
+      ;;
+    V) 	# version information
+    	echo "${CLJSH_VERSION}";
     	exit 0
       ;;
     d) 	# debug options
