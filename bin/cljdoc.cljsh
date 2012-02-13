@@ -4,7 +4,7 @@
 (require 'hiccup.core)
 
 (defn ul [coll] [:ul (for [x (map hiccup.core/h (map str coll))] [:li x])])
-
+(println "Hi:")
 (let [	w (reduce str "" (line-seq (java.io.BufferedReader. *in*)))
 		wmap (-> w symbol resolve meta)
 		wdoc (-> w symbol resolve meta (#'clojure.repl/print-doc) with-out-str)

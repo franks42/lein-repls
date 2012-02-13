@@ -304,3 +304,13 @@
 		(flatten (map	#(cljsh.completion/potential-completions % "") 
 									(map 	#(symbol (ns-name %)) 
 												(all-ns)))))))))
+
+(defn all-current-ns-words []
+	(doall (sort (concat
+		special-forms
+		(cljsh.completion/potential-completions nil *ns*)))))
+
+(defn print-all-current-ns-words []
+	(doall (map println (sort (concat
+		special-forms
+		(cljsh.completion/potential-completions nil *ns*))))))

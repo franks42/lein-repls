@@ -174,8 +174,12 @@ See \"https://github.com/franks42/lein-repls\" for details and docs."
        			pid (:out (clojure.java.shell/sh "bash" "-c" (str "echo -n ${PPID}")))
        			lfname (str "echo export LEIN_REPL_PORT='" port "'" " >  " pwd "/.lein_repls")
       	 		out2 (:out (clojure.java.shell/sh "bash" "-c" lfname))
-      	 		out3 (:out (clojure.java.shell/sh "bash" "-c" (str "echo export LEIN_REPL_PID='" pid "'" " >>  " pwd "/.lein_repls")))]
-       )
+      	 		out3 (:out (clojure.java.shell/sh "bash" "-c" (str "echo export LEIN_REPL_PIDD='" pid "'" " >>  " pwd "/.lein_repls")))
+      	 		out4 (:out (clojure.java.shell/sh "bash" "-c" (str "echo export LEIN_PROJECT_DIR='" pwd "'" " >>  " pwd "/.lein_repls")))
+      	 		out5 (:out (clojure.java.shell/sh "bash" "-c" (str "echo export LEIN_PROJECT_NAME='" (:name project) "'" " >>  " pwd "/.lein_repls")))
+      	 		out6 (:out (clojure.java.shell/sh "bash" "-c" (str "echo export LEIN_PROJECT_VERSION='" (:version project) "'" " >>  " pwd "/.lein_repls")))
+      	 		]
+       (println "hi" (:name project)))
        (if *trampoline?*
          (eval-in-project project server-form)
          (do (future (if (empty? project)

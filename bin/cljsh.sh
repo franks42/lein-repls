@@ -13,53 +13,117 @@
 # It allows the user to submit Clojure statement and Clojure script files
 # to a persistent networked repl for evaluation.
 
-CLJSH_VERSION="1.6.0"
+CLJSH_VERSION="1.8.0"
 
 # util functions
 
 function fullFilePath()
 {
 if [ -f "$1" ]; then
-	/bin/echo -n $( cd "$( dirname $1 )" && pwd )/"$( basename $1 )"
+	/bin/echo -n $( cd "$( dirname $1 )" && pwd )/"$( basename $1 )";
 else
-	echo "ERROR: \"$1\" is no valid file-path for a clojure-file." >&2
-	exit 1
+	displayAlert 'ERROR(fullFilePath): "'$1'" is no valid file-path for a clojure-file.';
+	exit 1;
 fi
 }
 
+# show applescript alert if osascript is detected
+function displayAlert ()
+{
+	if [ ${CLJSH_ALERT_DIALOG:-0} -eq 1 ] && [ "`which osascript`" ]; then
+		osascript > /dev/null <<-OSAEND
+		tell application "System Events"
+        activate
+        display alert "$*"
+    end tell	
+		OSAEND
+	fi
+ 	echo "$*" >&2
+}
+
+# start shell script in MacOSX Terminal or xterm
+function startTerminalScript ()
+{
+	if [ "`which osascript`" ]; then
+		osascript > /dev/null <<-ASEND
+				tell application "Terminal"
+					activate
+					do script "$*"
+				end tell -- application "Terminal"
+		ASEND
+	else
+		${XTERM:-"/usr/X11/bin/xterm"} -e "$*" &
+	fi
+}
+
+# search upwards for directory with project.clj 
+function leinProjectDir ()
+{
+ 	original_dir="$PWD";
+ 	if [ -f "$1" ]; then cd $( dirname "$1" ); 
+ 	elif [ -d "$1" ]; then cd "$1"; 
+ 	elif [ "$1" != "" ]; then $(displayAlert "ERROR(leinProjectDir): not a valid file or directory path"); exit 1; fi
+ 	while [ ! -r "$PWD/project.clj" ] && [ "$PWD" != "/" ]; do cd ..; done
+	if [ -r "$PWD/project.clj" ]; then projectDir="$PWD"; fi
+	cd "$original_dir";
+	echo "${projectDir}";
+}
+
+# test to see if cljsh-repls connection works
+function testRepls ()
+{
+	if [ "ping" == "$( cljsh -c '(println "ping")' )" ]; then 
+		displayAlert 'OK: repls server up & running and listening on port "'${LEIN_REPL_PORT}'"';
+		exit 0;
+	else
+		displayAlert "ERROR: some server listening on port ${LEIN_REPL_PORT}, but repls server not responding... not sure why (?).";
+		exit 1;
+	fi
+}
+
+# start "lein repls" if needed
+function startRepls ()
+{
+	if [ "${LEIN_REPL_PORT}" == "" ] || [ "$(netstat -an -f inet | grep '*.*' | grep "${LEIN_REPL_PORT}")" == "" ]; then
+		# no app listening on expected port, so start a new repls server
+		if [ -f "${LEIN_REPL_INIT_FILE}" ]; then rm "${LEIN_REPL_INIT_FILE}"; fi
+		startTerminalScript 'cd '"${LEIN_PROJECT_DIR}"'; lein repls'
+		ii=0; until [[ -f "${LEIN_REPL_INIT_FILE}" || $ii -gt 10 ]]; do
+			sleep 1; ii=$(($ii-1));
+		done
+		sleep 3
+		if [ -f "${LEIN_REPL_INIT_FILE}" ]; then 
+			source "${LEIN_REPL_INIT_FILE}" ; 
+			exit 0
+		else
+			displayAlert "ERROR: no lein project.clj found after starting lein repls (?)";
+			exit 1;
+		fi
+	fi
+}
+
 # Clojure code snippets
-# send kill-switch as final separate statement to end the repl session/connection gracefully
+
 CLJ_EVAL_PRINT_CODE='(cljsh.core/set-repl-result-print prn)'
 CLJ_NO_EVAL_PRINT_CODE='(cljsh.core/set-repl-result-print (fn [&a]))'
 CLJ_REPL_PROMPT_CODE='(cljsh.core/set-prompt cljsh.core/repl-ns-prompt)'
 CLJ_PRINT_CLJ_WORDS_CODE='(require (quote cljsh.completion)) (cljsh.completion/print-all-words)'
 CLJ_CLOSE_IN_CODE='(.close *in*)'
+CLJ_EXIT_REPLS_CODE='(System/exit 0)'
 LEIN_REPL_KILL_SWITCH=':leiningen.repl/exit'
 
 # rlwrap's clojure word completion in the repl use the following file
 RLWRAP_CLJ_WORDS_FILE=${RLWRAP_CLJ_WORDS_FILE:-"$HOME/.clj_completions"}
 
 # determine the directory of the associated project.clj, or $HOME if none.
-export LEIN_PROJECT_DIR=$(
-	NOT_FOUND=1
-	ORIGINAL_PWD="$PWD"
-	while [ ! -r "$PWD/project.clj" ] && [ "$PWD" != "/" ] && [ $NOT_FOUND -ne 0 ]
-	do
-			cd ..
-			if [ "$(dirname "$PWD")" = "/" ]; then
-					NOT_FOUND=0
-					cd "$ORIGINAL_PWD"
-			fi
-	done
-	if [ ! -r "$PWD/project.clj" ]; then cd "$HOME"; fi
-	printf "$PWD"
-)
+export LEIN_PROJECT_DIR=$(leinProjectDir)
+if [ ! -r "$LEIN_PROJECT_DIR/project.clj" ]; then LEIN_PROJECT_DIR="$HOME"; fi
 
 export LEIN_REPL_INIT_FILE=${LEIN_REPL_INIT_FILE:-"${LEIN_PROJECT_DIR}/.lein_repls"}
 if [ -f "${LEIN_REPL_INIT_FILE}" ]; then source "${LEIN_REPL_INIT_FILE}" ; fi
 
 export LEIN_REPL_HOST=${LEIN_REPL_HOST:-"0.0.0.0"}
-export LEIN_REPL_PORT=${LEIN_REPL_PORT:-"12357"}
+export LEIN_REPL_PORT=${LEIN_REPL_PORT:-""}
 
 # CLJSH_MAXTIME is the maximum time a task is allowed to take before socat will assume that that task is finished
 # the time is measured between the subsequent reads from stdin or writes to stdout by that task
@@ -85,7 +149,7 @@ CLJ_CODE_BEFORE=${CLJ_CODE}
 CLJ_CODE_AFTER=
 
 # command line option processing
-while [ "${!OPTIND}" == "-" ] || getopts ":drwpPghtvm:c:s:e:f:i:" opt; do
+while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtvm:c:s:e:f:i:" opt; do
   case $opt in
     c) 	# clojure code statements expected as options value
     	echo "${OPTARG}" >> ${CLJ_CODE}
@@ -110,6 +174,19 @@ while [ "${!OPTIND}" == "-" ] || getopts ":drwpPghtvm:c:s:e:f:i:" opt; do
     	echo "${CLJ_EVAL_PRINT_CODE}" >> ${CLJ_CODE}
     	CLJ_REPL_PROMPT=1
       ;;
+    l) 	# start the lein repls server if needed
+    	$(startRepls)
+    	LEIN_REPL_INIT_FILE="${LEIN_PROJECT_DIR}/.lein_repls"
+			if [ -f "${LEIN_REPL_INIT_FILE}" ]; then source "${LEIN_REPL_INIT_FILE}" ; fi
+			# $(testRepls)
+ 	    if [ $OPTIND -gt $# ]; then exit 0; fi
+      ;;
+    L) 	# stop/exit the lein repls server
+ 	    if [ "${LEIN_REPL_PORT}" != "" ] && [ "$(netstat -an -f inet | grep '*.*' | grep "${LEIN_REPL_PORT}")" != "" ]; then
+				cljsh -c "${CLJ_EXIT_REPLS_CODE}"  >&2;
+			fi
+ 	    if [ $OPTIND -gt $# ]; then exit 0; fi
+      ;;
     w) 	# refresh word completion file with current repl-context
 			cljsh -f "${CLJ_CODE}" -e "${CLJ_PRINT_CLJ_WORDS_CODE}" > "${RLWRAP_CLJ_WORDS_FILE}"
       ;;
@@ -118,9 +195,20 @@ while [ "${!OPTIND}" == "-" ] || getopts ":drwpPghtvm:c:s:e:f:i:" opt; do
       ;;
     g) 	# force a pickup of the "global" repls-server coordinates from the $HOME directory.
 			if [ -r "${HOME}/.lein_repls" ]; then 
-				source "${HOME}/.lein_repls" ; 
+				source "${HOME}/.lein_repls" ;
+				LEIN_PROJECT_DIR="`dirname "$(readlink "${HOME}/.lein_repls")"`"
+				LEIN_REPL_INIT_FILE="${LEIN_PROJECT_DIR}/.lein_repls"
 			else
-				echo "ERROR: no global/default init file found at ${HOME}/.lein_repls" >&2 ;
+				displayAlert "ERROR: no global/default init file found at ${HOME}/.lein_repls" ;
+      	exit 1;
+			fi
+      ;;
+    G) 	# make the current project the "global" one.
+			if [ -r "${LEIN_REPL_INIT_FILE}" ] && [ "${HOME}/.lein_repls" != "${LEIN_REPL_INIT_FILE}" ]; then
+				if [ -r "${HOME}/.lein_repls" ]; then rm "${HOME}/.lein_repls"; fi;
+				ln -s "${LEIN_REPL_INIT_FILE}" "${HOME}/.lein_repls";
+			else
+				displayAlert "ERROR: no local project found to make global." ;
       	exit 1;
 			fi
       ;;
@@ -130,8 +218,11 @@ while [ "${!OPTIND}" == "-" ] || getopts ":drwpPghtvm:c:s:e:f:i:" opt; do
     P) 	# turn off printing of eval-results by the repl.
     	echo "${CLJ_NO_EVAL_PRINT_CODE}" >> ${CLJ_CODE}
       ;;
+    a) 	# use applescript dialogs/alerts when available
+      CLJSH_ALERT_DIALOG=1
+      ;;
     v) 	# version information
-    	echo "Clojure Shell version: \"${CLJSH_VERSION}\"" >&2;
+    	displayAlert Clojure Shell version: "${CLJSH_VERSION}";
     	exit 0
       ;;
     d) 	# debug options
@@ -152,18 +243,20 @@ while [ "${!OPTIND}" == "-" ] || getopts ":drwpPghtvm:c:s:e:f:i:" opt; do
 			"#!" clojure shell-script files are supported.
 			"${CLJSH_PRG}" also supports interactive repl mode (-r) with rlwrap code-completion (-w)
 			---
-			${CLJSH_PRG} -r                             # -r interactive repl session
-			${CLJSH_PRG} -c clj-code                    # -c eval the clj-code (equivalent to -e)
-			${CLJSH_PRG} -e clj-code                    # -e eval the clj-code (equivalent to -c)
-			${CLJSH_PRG} -f clj-file                    # -f load&eval clj-file (equivalent to -i)
+			${CLJSH_PRG} -r                             # -r: interactive repl session
+			${CLJSH_PRG} -c clj-code [-e clj-code]      # -c or -e: eval the clj-code
+			${CLJSH_PRG} -f clj-file [-i clj-file]      # -f or -i: load&eval clj-file 
 			${CLJSH_PRG} -i clj-file                    # -i load&eval clj-file (equivalent to -f)
 			${CLJSH_PRG} clj-file args                  # load&eval clj-file with (optional) args
-			echo clj-code | ${CLJSH_PRG} -c clj-code    # eval piped clj-code after -c clj-code
 			echo clj-code | ${CLJSH_PRG} - -c clj-code  # "-" eval piped clj-code before -c clj-code
 			echo text | ${CLJSH_PRG} -t -c clj-code     # -t process arbitrary data from stdin with clj-code
 			${CLJSH_PRG} -p                             # -p print eval results to stdout (discarded by default)
-			${CLJSH_PRG} -w                             # -w refresh the clojure words for completion in interactive repl
-			${CLJSH_PRG} -g                             # -g pickup "global" repls-server coordinates from "~/.lein_repls"
+			${CLJSH_PRG} -l                             # -l starts the lein-repls server (when needed)
+			${CLJSH_PRG} -L                             # -L Stop/exit the lein-repls server
+			${CLJSH_PRG} -w                             # -w refresh the clojure completion-words for rlwrap within context
+			${CLJSH_PRG} -g                             # -g pickup "global" project's repls-server coordinates
+			${CLJSH_PRG} -G                             # -G set current project coordinates for the "global" repls-server
+			${CLJSH_PRG} -a                             # -a use applescript dialogs/alerts
 			${CLJSH_PRG} -s repl-server-port            # -s repls server port (default automatically set by "lein repls")
 			${CLJSH_PRG} -m task-max-time-sec           # -m set max time for task (default ${CLJSH_MAXTIME}sec - see docs)
 			${CLJSH_PRG} -h                             # -h this usage help plus diagnostic check & exit
@@ -180,20 +273,20 @@ EOHELP
 			hash socat 2>&-  || { echo >&2 "ERROR: \"socat\" is require for cljsh but not installed.";}
 			hash rlwrap 2>&- || { echo >&2 "ERROR: \"rlwrap\" is require for cljsh but not installed.";}
 
-    	exit 1
+    	exit 1;
       ;;
-    \?) echo "Invalid option: -$OPTARG" >&2
-    		exit 1
+    \?) displayAlert "ERROR(cljsh): Invalid option: -$OPTARG";
+    		exit 1;
     		;;
-    :)	echo "Option -$OPTARG requires an argument." >&2
-      	exit 1
+    :)	displayAlert "ERROR(cljsh): Option -$OPTARG requires an argument.";
+      	exit 1;
       	;;
   esac
   
   # deal with stdin directive "-" separately because getopts does not...
   if [ "${!OPTIND}" == "-" ]; then
   	if [ ${CLJSH_STDIN} == "TERM"  ]; then
-			echo "ERROR: No possible \"-\" directive with terminal connected to stdin." >&2
+			displayAlert "ERROR(cljsh): No possible '-' directive with terminal connected to stdin."
 			exit 1
   	fi
   	if [ -z "${CLJ_CODE_AFTER}" ]; then  # switch to "after stdin" code-file
@@ -201,7 +294,7 @@ EOHELP
 			CLJ_CODE_AFTER=${CLJ_CODE}
 			shift;
 		else
-			echo "ERROR: More than one stdin \"-\" directive." >&2
+			displayAlert "ERROR(cljsh): : More than one stdin '-' directive."
 			exit 1
 		fi
 	fi
@@ -239,10 +332,10 @@ fi
 # if -t option, then append kill switch to code
 if [ ${CLJ_STDIN_TEXT:-0} = 1 ]; then
 	if [ -n "${CLJ_CODE_AFTER}" ]; then
-		echo "ERROR: No code  \"-\" directive with -t option." >&2;	exit 1
+		displayAlert "ERROR(cljsh): No code  '-' directive with -t option.";	exit 1;
 	fi
 	if [ ${CLJ_REPL_PROMPT:-0} = 1 ]; then
-		echo "ERROR: No interactive repl (-r) with -t option." >&2;	exit 1
+		displayAlert "ERROR(cljsh): No interactive repl (-r) with -t option.";	exit 1
 	fi
 	# when arbitrary data from stdin, then close stdin and send the kill-switch at the end
 	/bin/echo ${CLJ_CLOSE_IN_CODE} >> ${CLJ_CODE_BEFORE};

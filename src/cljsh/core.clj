@@ -7,11 +7,39 @@
 ;; You must not remove this notice, or any other, from this software.
 
 (ns cljsh.core
-	(:require [clojure.main]))
-
+	(:require [clojure.main]
+	          [clojure.string]
+	          [clojure.pprint]
+	          [cljsh.utils]
+	          ;[clojure.tools.cli]
+	          ))
 
 ;; note that we have to keep this in sync with the project.clj entry
 (def lein-repls-version "1.6.0")
+
+(defn ping [] (println "pong"))
+
+(def cljsh-env (cljsh.utils/inheritable-thread-local 
+                  cljsh.utils/copy-atom-child-init 
+                  (atom "")))
+(def cljsh-command-line-args (cljsh.utils/inheritable-thread-local 
+                  cljsh.utils/copy-atom-child-init 
+                  (atom [])))
+; (swap! @cljsh.core/cljsh-env (fn [_] new-env-str))
+; (println "cljsh-env:" @@cljsh.core/cljsh-env)
+
+(defn register-cljsh-env 
+  "Environment is passed as a string and massaged into a map, 
+   and stored in an inheritable-thread-local"
+  [env-str]
+  (let [env-map (apply hash-map (flatten 
+                  (map  (fn [s] (let [v (clojure.string/split s #"=")
+                                      vv (if (= (count v) 1) [(first v) ""] v)]
+                                  vv))
+                        (clojure.string/split-lines env-str))))]
+    (swap! @cljsh.core/cljsh-env (fn [_] env-map))))
+
+(defn register-cljsh-command-line-args [v] (swap! @cljsh.core/cljsh-command-line-args (fn [_] v)))
 
 (defn current-thread [] (. Thread currentThread))
 
@@ -103,3 +131,22 @@
 		(binding [*err* cljsh.core/*console-err*]
 			(clojure.main/repl-caught e))
 		(clojure.main/repl-caught e)))
+		
+;;;;
+
+;; (defn process-cljsh-req
+;;   ""
+;;   []
+;;   ;(clojure.pprint/pprint  @@cljsh.core/cljsh-env)
+;;   (clojure.pprint/pprint @@cljsh.core/cljsh-command-line-args)
+;;   (let [ c (clojure.tools.cli/cli @@cljsh.core/cljsh-command-line-args
+;;              ["-p" "--port" "Listen on this port" :parse-fn #(Integer. %)] 
+;;              ["-h" "--host" "The hostname" :default "localhost"]
+;;              ["-v" "--[no-]verbose" :default true]
+;;              ["-c" "--code"]
+;;              ["-f" "--file"]
+;;              ["-l" "--log-directory" :default "/some/path"])]
+;;       (clojure.pprint/pprint @@cljsh.core/cljsh-command-line-args)
+;;       (clojure.pprint/pprint c)
+;;       (println "code:" (:code (first c)))
+;;       (println "load-string:" (load-string (:code (first c))))))
