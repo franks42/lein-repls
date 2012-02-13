@@ -13,7 +13,7 @@
 # It allows the user to submit Clojure statement and Clojure script files
 # to a persistent networked repl for evaluation.
 
-CLJSH_VERSION="1.8.0"
+CLJSH_VERSION="1.9.0"
 
 # init stuff
 
@@ -147,7 +147,7 @@ if [ "$CLJSH_DIR" != "" ]; then
 		echo "The upgrade task is not meant to be run from a checkout."
 		exit 1
 fi
-if [ $SNAPSHOT = "YES" ]; then
+if [ "$SNAPSHOT" = "YES" ]; then
 		echo "The upgrade task is only meant for stable releases."
 		exit 1
 fi
@@ -158,7 +158,9 @@ else
 		#https://raw.github.com/franks42/lein-repls/stable/bin/CLJSH_VERSION
 		#https://raw.github.com/franks42/lein-repls/stable/bin/cljsh.sh
 		# if [ `curl https://raw.github.com/franks42/lein-repls/stable/bin/CLJSH_VERSION` == `cljsh -V` ]; then echo YES; fi
-		echo "The script at $SCRIPT will be upgraded to the latest stable version."
+		echo "Downloading cljsh stable version number..."
+		CLJSH_STABLE_VERSION=`curl https://raw.github.com/franks42/lein-repls/stable/bin/CLJSH_VERSION`
+		echo "The script at $SCRIPT with version $CLJSH_VERSION  will be upgraded to the latest stable version (" "$CLJSH_STABLE_VERSION" ")."
 		echo -n "Do you want to continue [Y/n]? "
 		read RESP
 		case "$RESP" in
@@ -226,7 +228,7 @@ CLJ_CODE_BEFORE=${CLJ_CODE}
 CLJ_CODE_AFTER=
 
 # command line option processing
-while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtvVm:c:s:e:f:i:" opt; do
+while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtUvVm:c:s:e:f:i:" opt; do
   case $opt in
     c) 	# clojure code statements expected as options value
     	echo "${OPTARG}" >> ${CLJ_CODE}
@@ -297,6 +299,10 @@ while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtvVm:c:s:e:f:i:" opt; do
       ;;
     a) 	# use applescript dialogs/alerts when available
       CLJSH_ALERT_DIALOG=1
+      ;;
+    U) 	# upgrade cljsh
+			upgradeCljsh
+			exit 0
       ;;
     v) 	# version information
     	displayAlert Clojure Shell version: "${CLJSH_VERSION}";
