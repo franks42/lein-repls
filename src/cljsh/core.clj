@@ -41,7 +41,7 @@
   "Environment is passed as a string and massaged into a map, 
    and stored in an inheritable-thread-local"
   [env-str]
-  (let [env-map (apply hash-map (flatten 
+  (let [env-map (apply assoc {} (flatten 
                   (map  (fn [s] (let [v (clojure.string/split s #"=" 2)
                                       vv (if (= (count v) 1) [(first v) ""] v)]
                                   vv))

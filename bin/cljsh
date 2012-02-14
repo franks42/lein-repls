@@ -47,7 +47,7 @@ if type -p curl >/dev/null 2>&1; then
     if [ "$https_proxy" != "" ]; then
         CURL_PROXY="-x $https_proxy"
     fi
-    HTTP_CLIENT="curl $CURL_PROXY --insecure -f -L -o"
+    HTTP_CLIENT="curl $CURL_PROXY --insecure -f -L -S -o"
 fi
 
 ###############################################################################
@@ -156,7 +156,7 @@ function upgradeCljsh ()
 		echo "Downloading cljsh stable version number..."
 		TARGET="/tmp/cljsh-$$-upgrade"
 		CLJSH_SCRIPT_URL="https://raw.github.com/franks42/lein-repls/stable/bin/cljsh"
-		$HTTP_CLIENT "$TARGET" "$CLJSH_SCRIPT_URL"
+		"${HTTP_CLIENT}" "$TARGET" "$CLJSH_SCRIPT_URL"
 		CLJSH_STABLE_VERSION="$( cat "$TARGET" | grep CLJSH_VERSION=\" )"
 		if [ "$CLJSH_STABLE_VERSION" == "" ]; then 
 			displayAlert "ERROR: unable to obtain stable cljsh version info from github."
@@ -195,7 +195,7 @@ function upgradeLeinRepls ()
 	fi
 	echo "Downloading lein-repls info from clojars..."
 	TMP_ALL_JARS="/tmp/cljsh-$$-all-jars"
-	curl "http://clojars.org/repo/all-jars.clj" > "$TMP_ALL_JARS"
+	"${HTTP_CLIENT}" "http://clojars.org/repo/all-jars.clj" > "$TMP_ALL_JARS"
 	echo "Available versions on clojars:"
 	cat "$TMP_ALL_JARS" | grep 'lein-repls'
 	/bin/echo -n "Enter lein-repls version (e.g. 1.2.3) to install/upgrade-to ([return]: do nothing): "
@@ -373,7 +373,7 @@ while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtuUvVm:c:s:e:f:i:" opt; do
 			exit $?
       ;;
     v) 	# version information
-    	CURRENT_LEIN_REPLS_VERSION="`cljsh -c '(println cljsh.core/lein-repls-version)'`"
+    	CURRENT_LEIN_REPLS_VERSION="$(cljsh -c '(println cljsh.core/lein-repls-version)')"
     	displayAlert cljsh version: "${CLJSH_VERSION}" and lein-repls version: "${CURRENT_LEIN_REPLS_VERSION}";
     	exit 0
       ;;
@@ -390,11 +390,11 @@ while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtuUvVm:c:s:e:f:i:" opt; do
 			Usage: ${CLJSH_PRG} [OPTIONS] [FILE]
 			Clojure Shell version: "${CLJSH_VERSION}"
 			"${CLJSH_PRG}" is a shell script that sends clojure code to a persistent socket-repls-server.
-			The lein-plugin repls-server is started in the project's directory thru "lein repls".
-			${CLJSH_PRG} auto-detects server-port within project's dir - optional global project (-g)
+			The repls-server is started in the project's directory thru "lein repls", or "cljsh -l".
+			${CLJSH_PRG} auto-detects server-port within project's dir - optional global project (-g & -G)
 			Printed output and optionally eval results (-p) are returned thru stdout.
 			Clojure code is passed on command line (-c or -e), in file (-i or -f or FILE), or thru stdin.
-			Sequence of evaluation is determined by option's position - stdin defaults to last or "-".
+			Evaluation sequence is determined by argument's position (stdin defaults to last or "-" position).
 			Optionally, arbitrary data can be passed in thru stdin (-t).
 			"#!" clojure shell-script files are supported.
 			"${CLJSH_PRG}" also supports interactive repl mode (-r) with rlwrap code-completion (-w)
@@ -409,14 +409,16 @@ while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtuUvVm:c:s:e:f:i:" opt; do
 			${CLJSH_PRG} -p                             # -p print eval results to stdout (discarded by default)
 			${CLJSH_PRG} -l                             # -l starts the lein-repls server (when needed)
 			${CLJSH_PRG} -L                             # -L Stop/exit the lein-repls server
-			${CLJSH_PRG} -u                             # -u install/upgrade lein-repls plugin from clojars
-			${CLJSH_PRG} -U                             # -U upgrade cljsh script from github
 			${CLJSH_PRG} -w                             # -w refresh the clojure completion-words for rlwrap within context
 			${CLJSH_PRG} -g                             # -g pickup "global" project's repls-server coordinates
 			${CLJSH_PRG} -G                             # -G set current project coordinates for the "global" repls-server
 			${CLJSH_PRG} -a                             # -a use applescript dialogs/alerts
 			${CLJSH_PRG} -s repl-server-port            # -s repls server port (default automatically set by "lein repls")
 			${CLJSH_PRG} -m task-max-time-sec           # -m set max time for task (default ${CLJSH_MAXTIME}sec - see docs)
+			${CLJSH_PRG} -v                             # -v prints cljsh and lein-repls versions & exits
+			${CLJSH_PRG} -V                             # -V prints cljsh version only & exits (for script usage)
+			${CLJSH_PRG} -u                             # -u install/upgrade lein-repls plugin from clojars
+			${CLJSH_PRG} -U                             # -U upgrade cljsh script from github
 			${CLJSH_PRG} -h                             # -h this usage help plus diagnostic check & exit
 			---
 			Docs & code at "https://github.com/franks42/lein-repls"
