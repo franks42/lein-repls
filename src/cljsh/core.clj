@@ -31,7 +31,16 @@
 (def cljsh-env (cljsh.utils/inheritable-thread-local 
                   cljsh.utils/copy-atom-child-init 
                   (atom "")))
+(def cljsh-command-path (cljsh.utils/inheritable-thread-local 
+                  cljsh.utils/copy-atom-child-init 
+                  (atom "")))
 (def cljsh-command-line-args (cljsh.utils/inheritable-thread-local 
+                  cljsh.utils/copy-atom-child-init 
+                  (atom [])))
+(def cljsh-file-command-path (cljsh.utils/inheritable-thread-local 
+                  cljsh.utils/copy-atom-child-init 
+                  (atom "")))
+(def cljsh-file-command-line-args (cljsh.utils/inheritable-thread-local 
                   cljsh.utils/copy-atom-child-init 
                   (atom [])))
 ; (swap! @cljsh.core/cljsh-env (fn [_] new-env-str))
@@ -48,7 +57,10 @@
                         (clojure.string/split-lines env-str))))]
     (swap! @cljsh.core/cljsh-env (fn [_] env-map))))
 
+(defn register-cljsh-command-path [v] (swap! @cljsh.core/cljsh-command-path (fn [_] v)))
 (defn register-cljsh-command-line-args [v] (swap! @cljsh.core/cljsh-command-line-args (fn [_] v)))
+(defn register-cljsh-file-command-line-args [v] (swap! @cljsh.core/cljsh-file-command-line-args (fn [_] v)))
+(defn register-cljsh-file-command-path [v] (swap! @cljsh.core/cljsh-file-command-path (fn [_] v)))
 
 (defn current-thread [] (. Thread currentThread))
 
