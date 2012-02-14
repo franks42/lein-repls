@@ -11,11 +11,20 @@
 	          [clojure.string]
 	          [clojure.pprint]
 	          [cljsh.utils]
+	          [clojure.java.shell]
 	          ;[clojure.tools.cli]
 	          ))
 
-;; note that we have to keep this in sync with the project.clj entry
-(def lein-repls-version "1.6.0")
+;; some set at lein-repls start in leiningen.repls/repl-server
+(def ^:dynamic cljsh.core/lein-repls-name "lein-repls") 
+(def ^:dynamic cljsh.core/lein-repls-version "1.9.4-SNAPSHOT")
+(def ^:dynamic cljsh.core/lein-project-name "") 
+(def ^:dynamic cljsh.core/lein-project-version "")
+(def ^:dynamic cljsh.core/lein-repls-host "")
+(def ^:dynamic cljsh.core/lein-repls-port "")
+(def ^:dynamic cljsh.core/lein-repls-pid (:out (clojure.java.shell/sh "bash" "-c" (str "echo -n ${PPID}"))))
+
+
 
 (defn ping [] (println "pong"))
 

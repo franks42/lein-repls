@@ -95,10 +95,19 @@
 
 			(if ~*trampoline?*
 				(clojure.main/repl ~@options)
-				(do (when-not ~*interactive?*
-					(println "## Clojure" (clojure-version) "- \"lein-repls\" console and server started on project" (str "\"" ~(:name project) " " ~(:version project) "\"") (str "(pid/host/port:" (binding [*ns* (find-ns (quote clojure.java.shell))] (eval (quote (:out (clojure.java.shell/sh "bash" "-c" (str "echo -n ${PPID}")))))) "/" ~host "/" ~port ") ##"))
-					;; block to avoid shutdown-agents
-					@(promise)))))))
+				(do 
+				  (let [lein-project-version# ~(:version project)
+				        lein-project-name# ~(:name project)
+				        lein-repls-host# ~host
+				        lein-repls-port# ~port]
+  				  (binding [*ns* (find-ns 'cljsh.core)] (eval `(do (def ^:dynamic cljsh.core/lein-project-version ~lein-project-version#)
+  				                                                   (def ^:dynamic cljsh.core/lein-project-name ~lein-project-name#)
+  				                                                   (def ^:dynamic cljsh.core/lein-repls-host ~lein-repls-host#)
+  				                                                   (def ^:dynamic cljsh.core/lein-repls-port ~lein-repls-port#)))))
+				  (when-not ~*interactive?*
+					  (println "## Clojure" (clojure-version) "- \"lein-repls\" console and server started on project" (str "\"" ~(:name project) " " ~(:version project) "\"") (str "(pid/host/port:" (binding [*ns* (find-ns (quote clojure.java.shell))] (eval (quote (:out (clojure.java.shell/sh "bash" "-c" (str "echo -n ${PPID}")))))) "/" ~host "/" ~port ") ##"))
+					  ;; block to avoid shutdown-agents
+					  @(promise)))))))
 
 (defn copy-out-loop [reader]
   (let [buffer (make-array Character/TYPE 1000)]
@@ -179,7 +188,8 @@ See \"https://github.com/franks42/lein-repls\" for details and docs."
       	 		out5 (:out (clojure.java.shell/sh "bash" "-c" (str "echo export LEIN_PROJECT_NAME='" (:name project) "'" " >>  " pwd "/.lein_repls")))
       	 		out6 (:out (clojure.java.shell/sh "bash" "-c" (str "echo export LEIN_PROJECT_VERSION='" (:version project) "'" " >>  " pwd "/.lein_repls")))
       	 		]
-       (println "hi" (:name project)))
+       ;(binding [*ns* (find-ns 'cljsh.core)] (eval `(def ^:dynamic cljsh.core/lein-repls-version ~(:version project)))))
+       (binding [*ns* (find-ns 'cljsh.core)] (eval `(def ^:dynamic cljsh.core/lein-repls-version "jaja"))))
        (if *trampoline?*
          (eval-in-project project server-form)
          (do (future (if (empty? project)

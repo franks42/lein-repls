@@ -4,13 +4,6 @@
 # BB_DOC_SELSTART and BB_DOC_SELEND yield character index for start and end of selection.
 # If start and end are equal, then no selection and it designates the cursor position
 
-# ensure that document is saved, otherwise we work with out-of-date data
-osascript <<-END
-	tell application "BBEdit"
-		save document 1
-	end tell
-END
-
 # use applescript to get selection from current bbedit window
 DOC_SELECTION=$( osascript <<-END
 tell application "BBEdit"
@@ -25,9 +18,14 @@ END
 if [ "${DOC_SELECTION}" != "" ]; then
 	# write selection to a newly created temp-file
 	CLJ_FILE=`mktemp -t bbedit_cljsh`.clj || exit 1
-	# write selection thru some head&tail juggling to tmp-file
 	echo "${DOC_SELECTION}" > "${CLJ_FILE}"
 else
+	# ensure that document is saved, otherwise we work with out-of-date data
+	osascript <<-END
+		tell application "BBEdit"
+			save document 1
+		end tell
+	END
 	# no selection, so send whole clj-file for eval
 	CLJ_FILE="${BB_DOC_PATH}"
 fi

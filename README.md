@@ -37,9 +37,9 @@ The "repls" plugin is installed thru the standard Leiningen mechanism:
 Lastly, you will have to download the cljsh shell script and put it somewhere on your path:  
 
 
-   	$ curl https://raw.github.com/franks42/lein-repls/master/bin/cljsh.sh > cljsh  
-   	$ chmod +x cljsh  
-   	$ mv cljsh /somewhere-on-your-path/cljsh  
+   	$ curl https://raw.github.com/franks42/lein-repls/stable/bin/cljsh > /tmp/cljsh  
+   	$ chmod +x /tmp/cljsh  
+   	$ mv /tmp/cljsh /somewhere-on-your-path/cljsh  
 
 
 Alternatively, you can clone the github repo: "https://github.com/franks42/lein-repls"

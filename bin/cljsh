@@ -50,7 +50,6 @@ if type -p curl >/dev/null 2>&1; then
 fi
 
 
-
 # util functions
 
 function fullFilePath()
@@ -143,53 +142,51 @@ function startRepls ()
 
 function upgradeCljsh ()
 {
-if [ "$CLJSH_DIR" != "" ]; then
-	displayAlert "ERROR: The cljsh upgrade is not meant to be run from a checkout."
-	exit 1
-fi
-if [ "$SNAPSHOT" = "YES" ]; then
-	displayAlert "The upgrade task is only meant for stable releases."
-	exit 1
-fi
-if [ ! -w "$SCRIPT" ]; then
-	displayAlert "ERROR: You do not have permission to upgrade the installation in $SCRIPT"
-	exit 1
-else
-	echo "Downloading cljsh stable version number..."
-	TARGET="/tmp/cljsh-$$-upgrade"
-	CLJSH_SCRIPT_URL="https://raw.github.com/franks42/lein-repls/stable/bin/cljsh"
-	$HTTP_CLIENT "$TARGET" "$CLJSH_SCRIPT_URL"
-	CLJSH_STABLE_VERSION="$( cat "$TARGET" | grep CLJSH_VERSION=\" )"
-	if [ "$CLJSH_STABLE_VERSION" == "" ]; then 
-		displayAlert "ERROR: unable to obtain stable cljsh version info from github."
-		exit 1;
+	if [ "$CLJSH_DIR" != "" ]; then
+		displayAlert "ERROR: The cljsh upgrade is not meant to be run from a checkout."
+		exit 1
 	fi
-	echo "cljsh at \"$SCRIPT\" has version \"$CLJSH_VERSION\"  and the latest stable version is $CLJSH_STABLE_VERSION."
-	/bin/echo -n "Do you want to upgrade to stable version $CLJSH_STABLE_VERSION [y/N]? "
-	read RESP
-	case "$RESP" in
+	if [ "$SNAPSHOT" = "YES" ]; then
+		displayAlert "The upgrade task is only meant for stable releases."
+		exit 1
+	fi
+	if [ ! -w "$SCRIPT" ]; then
+		displayAlert "ERROR: You do not have permission to upgrade the installation in $SCRIPT"
+		exit 1
+	else
+		echo "Downloading cljsh stable version number..."
+		TARGET="/tmp/cljsh-$$-upgrade"
+		CLJSH_SCRIPT_URL="https://raw.github.com/franks42/lein-repls/stable/bin/cljsh"
+		$HTTP_CLIENT "$TARGET" "$CLJSH_SCRIPT_URL"
+		CLJSH_STABLE_VERSION="$( cat "$TARGET" | grep CLJSH_VERSION=\" )"
+		if [ "$CLJSH_STABLE_VERSION" == "" ]; then 
+			displayAlert "ERROR: unable to obtain stable cljsh version info from github."
+			exit 1;
+		fi
+		echo "cljsh at \"$SCRIPT\" has version \"$CLJSH_VERSION\"  and the latest stable version is $CLJSH_STABLE_VERSION."
+		/bin/echo -n "Do you want to upgrade to stable version $CLJSH_STABLE_VERSION [y/N]? "
+		read RESP
+		case "$RESP" in
 			y|Y)
-					echo
-					echo "Upgrading cljsh..."
-							mv "$TARGET" "$SCRIPT" \
-							&& chmod +x "$SCRIPT" \
-							&& "$SCRIPT" -v
-					exit $?;;
+				echo "Upgrading cljsh..."
+				mv "$TARGET" "$SCRIPT" \
+				&& chmod +x "$SCRIPT" \
+				&& "$SCRIPT" -v
+				exit $?;;
 			*)
-					echo "Cljsh upgrade aborted."
-					exit 1;;
-	esac
-fi
+				echo "Cljsh upgrade aborted."
+				exit 1;;
+		esac
+	fi
 }
 
 
 # up/down/side-grade lein-repls plugin
 # lein_repls_version="`cljsh -c '(println cljsh.core/lein-repls-version)'`"
 
-
 function upgradeLeinRepls ()
 {
-	echo "Determining if lein-repls is installed..."
+	echo "Determine if the lein-repls plugin is installed..."
 	if [ "`lein help | grep 'repls'`" != "" ]; then 
 		CURRENT_LEIN_REPLS_VERSION="`cljsh -c '(println cljsh.core/lein-repls-version)'`"
 		if [ "$CURRENT_LEIN_REPLS_VERSION" == "" ]; then
@@ -209,7 +206,6 @@ function upgradeLeinRepls ()
 	read RESP;
 	if [ "$RESP" != "" ]; then
 		echo "Installing/Upgrading-to lein-repls version "$RESP"...";
-		set -x
 		if [ "$CURRENT_LEIN_REPLS_VERSION" != "" ]; then
 			lein plugin uninstall lein-repls "$CURRENT_LEIN_REPLS_VERSION" && lein plugin install lein-repls "$RESP"
 		else
@@ -220,8 +216,27 @@ function upgradeLeinRepls ()
 		echo "lein-repls upgrade aborted.";
 		exit 1;
 	fi
-
 }
+
+
+# Cljsh args and env preparation
+
+export CLJSH_OPT="$*"
+export CLJSH_OPT2="$@"
+export CLJSH_ARGS
+for iarg in "$@"
+do
+	CLJSH_ARGS="$CLJSH_ARGS \"`echo "$iarg" | sed 's/\"/\\\\\"/g'`\""
+done
+
+export CLJSH_PID="$$"
+export CLJSH__="$_"
+export CLJSH_0="$0"
+export CLJSH_HOSTNAME="$HOSTNAME"
+export CLJSH_HOSTTYPE="$HOSTTYPE"
+export CLJSH_OSTYPE="$OSTYPE"
+export CLJSH_PWD="$PWD"
+export CLJSH_UID="$UID"
 
 
 # Clojure code snippets
@@ -235,7 +250,7 @@ CLJ_EXIT_REPLS_CODE='(System/exit 0)'
 LEIN_REPL_KILL_SWITCH=':leiningen.repl/exit'
 
 # rlwrap's clojure word completion in the repl use the following file
-RLWRAP_CLJ_WORDS_FILE=${RLWRAP_CLJ_WORDS_FILE:-"$HOME/.clj_completions"}
+export RLWRAP_CLJ_WORDS_FILE=${RLWRAP_CLJ_WORDS_FILE:-"$HOME/.clj_completions"}
 
 # determine the directory of the associated project.clj, or $HOME if none.
 export LEIN_PROJECT_DIR=$(leinProjectDir)
@@ -258,7 +273,7 @@ export CLJSH_MAXTIME=${CLJSH_MAXTIME:-"600"}
 CLJ_TMP_FNAME=`basename $0`
 
 # determine what is connected to the stdin of this script
-CLJSH_STDIN="REDIRECTED"
+export CLJSH_STDIN="REDIRECTED"
 if [[ -p /dev/stdin ]]; then CLJSH_STDIN="PIPE"; fi
 if [[ -t 0 ]]; then CLJSH_STDIN="TERM"; fi
 
@@ -269,6 +284,15 @@ if [[ -t 0 ]]; then CLJSH_STDIN="TERM"; fi
 CLJ_CODE=`mktemp -t ${CLJ_TMP_FNAME}` || exit 1
 CLJ_CODE_BEFORE=${CLJ_CODE}
 CLJ_CODE_AFTER=
+
+# communicate env and cmd-line args/options to repls-server
+
+export CLJSH_ENV=$( env )
+CLJSH_ENV=`echo "$CLJSH_ENV" | sed 's/\"/\\\\\"/g'`
+
+echo  '(cljsh.core/register-cljsh-env "'"${CLJSH_ENV}"'")' >> ${CLJ_CODE}
+echo  '(cljsh.core/register-cljsh-command-line-args ['"$CLJSH_ARGS"'])' >> ${CLJ_CODE}
+
 
 # command line option processing
 while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtuUvVm:c:s:e:f:i:" opt; do
@@ -345,17 +369,18 @@ while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtuUvVm:c:s:e:f:i:" opt; do
       ;;
     u) 	# upgrade lein-repls
 			upgradeLeinRepls
-			exit 0
+			exit $?
       ;;
     U) 	# upgrade cljsh
 			upgradeCljsh
-			exit 0
+			exit $?
       ;;
     v) 	# version information
-    	displayAlert Clojure Shell version: "${CLJSH_VERSION}";
+    	CURRENT_LEIN_REPLS_VERSION="`cljsh -c '(println cljsh.core/lein-repls-version)'`"
+    	displayAlert cljsh version: "${CLJSH_VERSION}" and lein-repls version: "${CURRENT_LEIN_REPLS_VERSION}";
     	exit 0
       ;;
-    V) 	# version information
+    V) 	# version information only for script-usage
     	echo "${CLJSH_VERSION}";
     	exit 0
       ;;
@@ -387,6 +412,8 @@ while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtuUvVm:c:s:e:f:i:" opt; do
 			${CLJSH_PRG} -p                             # -p print eval results to stdout (discarded by default)
 			${CLJSH_PRG} -l                             # -l starts the lein-repls server (when needed)
 			${CLJSH_PRG} -L                             # -L Stop/exit the lein-repls server
+			${CLJSH_PRG} -u                             # -u install/upgrade lein-repls plugin from clojars
+			${CLJSH_PRG} -U                             # -U upgrade cljsh script from github
 			${CLJSH_PRG} -w                             # -w refresh the clojure completion-words for rlwrap within context
 			${CLJSH_PRG} -g                             # -g pickup "global" project's repls-server coordinates
 			${CLJSH_PRG} -G                             # -G set current project coordinates for the "global" repls-server
@@ -448,6 +475,7 @@ if [ -n "$CLJFILE" ]; then
 	echo ${CLJ_ARGS_CODE} >> ${CLJ_CODE}  # first write args before load-file
 	echo '(load-file "'"${CLJFILEFP}"'")' >> ${CLJ_CODE}
 fi
+
 
 # special cases for options
 
