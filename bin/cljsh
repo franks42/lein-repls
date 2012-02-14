@@ -195,7 +195,7 @@ function upgradeLeinRepls ()
 	fi
 	echo "Downloading lein-repls info from clojars..."
 	TMP_ALL_JARS="/tmp/cljsh-$$-all-jars"
-	${HTTP_CLIENT} "http://clojars.org/repo/all-jars.clj" > "$TMP_ALL_JARS"
+	${HTTP_CLIENT} "$TMP_ALL_JARS" "http://clojars.org/repo/all-jars.clj"
 	echo "Available versions on clojars:"
 	cat "$TMP_ALL_JARS" | grep 'lein-repls'
 	/bin/echo -n "Enter lein-repls version (e.g. 1.2.3) to install/upgrade-to ([return]: do nothing): "
