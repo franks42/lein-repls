@@ -42,7 +42,7 @@
    and stored in an inheritable-thread-local"
   [env-str]
   (let [env-map (apply hash-map (flatten 
-                  (map  (fn [s] (let [v (clojure.string/split s #"=")
+                  (map  (fn [s] (let [v (clojure.string/split s #"=" 2)
                                       vv (if (= (count v) 1) [(first v) ""] v)]
                                   vv))
                         (clojure.string/split-lines env-str))))]

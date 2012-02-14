@@ -15,6 +15,7 @@
 
 CLJSH_VERSION="1.9.2"
 
+###############################################################################
 # init stuff
 
 # normalize $0 on certain BSDs
@@ -49,7 +50,7 @@ if type -p curl >/dev/null 2>&1; then
     HTTP_CLIENT="curl $CURL_PROXY --insecure -f -L -o"
 fi
 
-
+###############################################################################
 # util functions
 
 function fullFilePath()
@@ -137,9 +138,7 @@ function startRepls ()
 	fi
 }
 
-
 # update cljsh from latest stable github version
-
 function upgradeCljsh ()
 {
 	if [ "$CLJSH_DIR" != "" ]; then
@@ -180,10 +179,7 @@ function upgradeCljsh ()
 	fi
 }
 
-
 # up/down/side-grade lein-repls plugin
-# lein_repls_version="`cljsh -c '(println cljsh.core/lein-repls-version)'`"
-
 function upgradeLeinRepls ()
 {
 	echo "Determine if the lein-repls plugin is installed..."
@@ -218,7 +214,7 @@ function upgradeLeinRepls ()
 	fi
 }
 
-
+###############################################################################
 # Cljsh args and env preparation
 
 export CLJSH_OPT="$*"
@@ -239,6 +235,7 @@ export CLJSH_PWD="$PWD"
 export CLJSH_UID="$UID"
 
 
+###############################################################################
 # Clojure code snippets
 
 CLJ_EVAL_PRINT_CODE='(cljsh.core/set-repl-result-print prn)'
@@ -278,7 +275,7 @@ if [[ -p /dev/stdin ]]; then CLJSH_STDIN="PIPE"; fi
 if [[ -t 0 ]]; then CLJSH_STDIN="TERM"; fi
 
 ###############################################################################
-# Option processing.
+# Option processing and clj-code generation.
 
 # file that will hold clj-statements associated with cmd-line options
 CLJ_CODE=`mktemp -t ${CLJ_TMP_FNAME}` || exit 1
@@ -462,6 +459,7 @@ EOHELP
 done  # end of getopts processing
 
 
+###############################################################################
 # process optional clj-file + args after the cljsh-options
 
 # the remaining args are expected to be an optional single clj-file name with (optional) args
@@ -477,6 +475,7 @@ if [ -n "$CLJFILE" ]; then
 fi
 
 
+###############################################################################
 # special cases for options
 
 # no options, no clj-file and connected to the terminal => assume interactive repl
@@ -526,6 +525,9 @@ CLJ_KILL_FILE=`mktemp -t ${CLJ_TMP_FNAME}` || exit 1
 
 ###############################################################################
 # lastly, we send the code to the persistent repl
+# distinguish the interactive from the batch jobs
+# make sure the stdin-stream is sandwiched between pre- and post-clj-code
+# insert kill-switch code at the right place
 
 if [ ${CLJ_REPL_PROMPT:-0} = 1 ]; then  # user wants an interactive REPL
 
@@ -548,8 +550,8 @@ else  # no REPL, nothing interactive
 
 	if [ ${CLJ_STDIN_TEXT:-0} -eq 1 ]; then   # arbitrary data but no code coming from stdin
 
-			# user's code is responsible for closing *in* to indicate eof as we cannot deduce it to use the kill-switch
-			exec cat ${CLJ_BEFORE_LOAD} - | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT};
+		# user's code is responsible for closing *in* to indicate eof as we cannot deduce it to use the kill-switch
+		exec cat ${CLJ_BEFORE_LOAD} - | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT};
 		
 	elif [ "${CLJSH_STDIN}" == "TERM" ]; then # not interactive, so no code will come-in thru stdin
 
@@ -557,10 +559,11 @@ else  # no REPL, nothing interactive
 		
 	else   # expect clojure code to be piped-in from stdin and kill&end the session after that
 
-			# because the repl keeps reading from stdin for clojure-statements, we can append the kill-switch at the end
-			exec cat ${CLJ_BEFORE_LOAD} - ${CLJ_AFTER_LOAD} ${CLJ_KILL_FILE} | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT};
+		# because the repl keeps reading from stdin for clojure-statements, we can append the kill-switch at the end
+		exec cat ${CLJ_BEFORE_LOAD} - ${CLJ_AFTER_LOAD} ${CLJ_KILL_FILE} | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT};
 			
 	fi
 fi
 
-# EOF "cljsh.sh"
+###############################################################################
+# EOF "cljsh"
