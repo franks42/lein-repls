@@ -47,7 +47,7 @@ if type -p curl >/dev/null 2>&1; then
     if [ "$https_proxy" != "" ]; then
         CURL_PROXY="-x $https_proxy"
     fi
-    HTTP_CLIENT="curl $CURL_PROXY --insecure -f -L -S -o"
+    HTTP_CLIENT="curl $CURL_PROXY --insecure -f -L -s -S -o"
 fi
 
 ###############################################################################
@@ -156,7 +156,7 @@ function upgradeCljsh ()
 		echo "Downloading cljsh stable version number..."
 		TARGET="/tmp/cljsh-$$-upgrade"
 		CLJSH_SCRIPT_URL="https://raw.github.com/franks42/lein-repls/stable/bin/cljsh"
-		"${HTTP_CLIENT}" "$TARGET" "$CLJSH_SCRIPT_URL"
+		${HTTP_CLIENT} "$TARGET" "$CLJSH_SCRIPT_URL"
 		CLJSH_STABLE_VERSION="$( cat "$TARGET" | grep CLJSH_VERSION=\" )"
 		if [ "$CLJSH_STABLE_VERSION" == "" ]; then 
 			displayAlert "ERROR: unable to obtain stable cljsh version info from github."
@@ -195,7 +195,7 @@ function upgradeLeinRepls ()
 	fi
 	echo "Downloading lein-repls info from clojars..."
 	TMP_ALL_JARS="/tmp/cljsh-$$-all-jars"
-	"${HTTP_CLIENT}" "http://clojars.org/repo/all-jars.clj" > "$TMP_ALL_JARS"
+	${HTTP_CLIENT} "http://clojars.org/repo/all-jars.clj" > "$TMP_ALL_JARS"
 	echo "Available versions on clojars:"
 	cat "$TMP_ALL_JARS" | grep 'lein-repls'
 	/bin/echo -n "Enter lein-repls version (e.g. 1.2.3) to install/upgrade-to ([return]: do nothing): "
