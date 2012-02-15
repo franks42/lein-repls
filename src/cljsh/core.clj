@@ -64,11 +64,6 @@
 
 (defn current-thread [] (. Thread currentThread))
 
-;; place holder for argument passing thru cljsh invocation
-(def ^:dynamic *cljsh-command-line-file* "")
-(def ^:dynamic *cljsh-command-line-args* "")
-(def ^:dynamic *cljsh-args* "")
-
 (def ^:dynamic *console-out* *out*)
 (def ^:dynamic *console-err* *err*)
 
@@ -154,7 +149,8 @@
 		(clojure.main/repl-caught e)))
 		
 ;;;;
-
+;; future processing
+;;
 ;; (defn process-cljsh-req
 ;;   ""
 ;;   []

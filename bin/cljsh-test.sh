@@ -187,9 +187,9 @@ echo "=> that wants to be upper'ed" >> tst.txt
 # but linux doesn't support more than one option, so -t isn't recognized
 # but as always, one level of indirection solves everything :-( :
 # instead of -t option, we set the env-variable CLJ_STDIN_TEXT before we call our cljsh-script:
-cat <<"EOBSC" > upper-cljsh.sh
+cat <<EOBSC > upper-cljsh.sh
 #!/bin/bash
-env CLJ_STDIN_TEXT=1 upper-without-t.cljsh
+env CLJ_STDIN_TEXT=1 "$(pwd)/upper-without-t.cljsh"
 EOBSC
 chmod +x upper-cljsh.sh
 # now we can write out clj-code in the separate upper-without-t.cljsh file.

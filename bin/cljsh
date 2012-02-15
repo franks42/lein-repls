@@ -479,11 +479,6 @@ if [ -n "$CLJFILE" ]; then
 	done
 	echo  '(cljsh.core/register-cljsh-file-command-line-args ['"$CLJSH_FILE_ARGS"'])' >> ${CLJ_CODE}
 	echo  '(cljsh.core/register-cljsh-file-command-path "'"${CLJFILEFP}"'")' >> ${CLJ_CODE}
-
-# 	CLJ_ARGS_CODE='(binding [*ns* (find-ns (quote cljsh.core))] (eval (quote (def ^:dynamic cljsh.core/*cljsh-command-line-file* "'${CLJFILEFP}'")))(eval (quote (def ^:dynamic cljsh.core/*cljsh-command-line-args* "'$*'"))))'
-# 	CLJ_ARGS_CODE=$(echo $CLJ_ARGS_CODE | sed s/\"/\\\\\"/g)
-# 	echo ${CLJ_ARGS_CODE} >> ${CLJ_CODE}  # first write args before load-file
-	
 	echo '(load-file "'"${CLJFILEFP}"'")' >> ${CLJ_CODE}
 fi
 
