@@ -217,12 +217,13 @@ function upgradeLeinRepls ()
 ###############################################################################
 # Cljsh args and env preparation
 
-export CLJSH_OPT="$*"
-export CLJSH_OPT2="$@"
-export CLJSH_ARGS
+CLJSH_OPT="$*"
+CLJSH_OPT2="$@"
+CLJSH_ARGS=
 for iarg in "$@"
 do
-	CLJSH_ARGS="$CLJSH_ARGS \"`echo "$iarg" | sed 's/\"/\\\\\"/g'`\""
+	CLJSH_ARGS="$CLJSH_ARGS "'"'"$(echo "$iarg" | sed 's/\"/\\"/g')"'"'
+	#CLJSH_ARGS="no way"
 done
 
 export CLJSH_PID="$$"
@@ -285,7 +286,7 @@ CLJ_CODE_AFTER=
 # communicate env and cmd-line args/options to repls-server
 
 export CLJSH_ENV=$( env )
-CLJSH_ENV=`echo "$CLJSH_ENV" | sed 's/\"/\\\\\"/g'`
+CLJSH_ENV=$(echo "$CLJSH_ENV" | sed 's/\"/\\\\\"/g')
 
 echo  '(cljsh.core/register-cljsh-env "'"${CLJSH_ENV}"'")' >> ${CLJ_CODE}
 echo  '(cljsh.core/register-cljsh-command-path "'"$0"'")' >> ${CLJ_CODE}
@@ -474,14 +475,14 @@ if [ -n "$CLJFILE" ]; then
 	export CLJSH_FILE_ARGS
 	for iarg in "$@"
 	do
-		CLJSH_FILE_ARGS="$CLJSH_FILE_ARGS \"`echo "$iarg" | sed 's/\"/\\\\\"/g'`\""
+		CLJSH_FILE_ARGS="$CLJSH_FILE_ARGS \"$(echo "$iarg" | sed 's/\"/\\\\\"/g')\""
 	done
 	echo  '(cljsh.core/register-cljsh-file-command-line-args ['"$CLJSH_FILE_ARGS"'])' >> ${CLJ_CODE}
 	echo  '(cljsh.core/register-cljsh-file-command-path "'"${CLJFILEFP}"'")' >> ${CLJ_CODE}
 
-	CLJ_ARGS_CODE='(binding [*ns* (find-ns (quote cljsh.core))] (eval (quote (def ^:dynamic cljsh.core/*cljsh-command-line-file* "'${CLJFILEFP}'")))(eval (quote (def ^:dynamic cljsh.core/*cljsh-command-line-args* "'$*'"))))'
-	CLJ_ARGS_CODE=`echo $CLJ_ARGS_CODE | sed s/\"/\\\\\"/g`
-	echo ${CLJ_ARGS_CODE} >> ${CLJ_CODE}  # first write args before load-file
+# 	CLJ_ARGS_CODE='(binding [*ns* (find-ns (quote cljsh.core))] (eval (quote (def ^:dynamic cljsh.core/*cljsh-command-line-file* "'${CLJFILEFP}'")))(eval (quote (def ^:dynamic cljsh.core/*cljsh-command-line-args* "'$*'"))))'
+# 	CLJ_ARGS_CODE=$(echo $CLJ_ARGS_CODE | sed s/\"/\\\\\"/g)
+# 	echo ${CLJ_ARGS_CODE} >> ${CLJ_CODE}  # first write args before load-file
 	
 	echo '(load-file "'"${CLJFILEFP}"'")' >> ${CLJ_CODE}
 fi

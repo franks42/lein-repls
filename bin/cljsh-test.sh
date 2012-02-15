@@ -182,24 +182,29 @@ echo "=> this is a stream of text and no clojure code" | cljsh -t -c '(prn (read
 echo "=> this is a stream of text" > tst.txt
 echo "=> all lower case" >> tst.txt
 echo "=> that wants to be upper'ed" >> tst.txt
-# write the clojure filter code - note -t option for text processing for the #! directive
-# also you HAVE to close *in* in your script otherwise you'll wait a looong time
+# unfortunately, the #! is not portable across unixes...
+# ideally we would use "#!/usr/bin/env cljsh -t", which works on bsd/macos,
+# but linux doesn't support more than one option, so -t isn't recognized
+# but as always, one level of indirection solves everything :-( :
+# instead of -t option, we set the env-variable CLJ_STDIN_TEXT before we call our cljsh-script:
+cat <<"EOBSC" > upper-cljsh.sh
+#!/bin/bash
+env CLJ_STDIN_TEXT=1 upper-without-t.cljsh
+EOBSC
+chmod +x upper-cljsh.sh
+# now we can write out clj-code in the separate upper-without-t.cljsh file.
+# remember to close *in* in your script otherwise you'll wait a looong time
 # (note that there is no way to add a kill-switch automagically at the end of the code...)
-# possible alternative: (doseq [line (line-seq (java.io.BufferedReader. *in*))] (println line))
-cat <<"EOCLJ" > upper.cljsh
-#!/usr/bin/env cljsh -t
+cat <<"EOCLJ" > upper-without-t.cljsh
+#!/usr/bin/env cljsh
 (require 'clojure.string)
-;; (loop [l (read-line)] 
-;; 	(when l 
-;; 		(prn (clojure.string/upper-case l)) 
-;;		(recur (read-line))))
 (doseq [line (line-seq (java.io.BufferedReader. *in*))] 
-    (prn (clojure.string/upper-case line)))
+  (prn (clojure.string/upper-case line)))
 (.close *in*)
 EOCLJ
-chmod +x upper.cljsh
+chmod +x upper-without-t.cljsh
 # test the filter:
-cat tst.txt | ./upper.cljsh
+cat tst.txt | ./upper-cljsh.sh
 #------------------------------------------------------------------------------
 # "=> THIS IS A STREAM OF TEXT"
 # "=> ALL LOWER CASE"
@@ -207,7 +212,7 @@ cat tst.txt | ./upper.cljsh
 #------------------------------------------------------------------------------
 
 # see if it behaves well as a true unix filter by lowering it again:
-cat tst.txt | ./upper.cljsh | tr '[:upper:]' '[:lower:]'
+cat tst.txt | ./upper-cljsh.sh | tr '[:upper:]' '[:lower:]'
 #------------------------------------------------------------------------------
 # "=> this is a stream of text"
 # "=> all lower case"
