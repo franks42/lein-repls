@@ -112,7 +112,7 @@ cljsh tst.clj -a -b -c why -def not
 #------------------------------------------------------------------------------
 
 # the whole original command path and line options/args vector are also available thru 
- @@cljsh.core/cljsh-command-path and @@cljsh.core/cljsh-command-line-args:
+# @@cljsh.core/cljsh-command-path and @@cljsh.core/cljsh-command-line-args:
 # (as is cljsh's environment @@cljsh.core/cljsh-env, but that is a bit big to print out here...)
 echo '(println "=> command path and args: " @@cljsh.core/cljsh-command-path @@cljsh.core/cljsh-command-line-args)' > tst.clj
 cljsh -p tst.clj -a -b -c why -def not 
