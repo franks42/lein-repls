@@ -19,8 +19,19 @@ set -v   # turn on verbose - easy for verifying expected output
 # all clojure scripts are passed to the "lein repl" server over the network/loopback 
 # for eval, and the output is brought back to stdout.
 
-# note that the lein-repl must be running for cljsh to work
-# you must have a "lein repl" session running in a terminal somewhere
+# cljsh -h will give help info and does some basic diagnostics
+
+# note that the lein-repls server must be running for cljsh to do real work
+# you can always start with cljsh -l to ensure the repls-server is running
+cljsh -l
+
+#------------------------------------------------------------------------------
+# print out version info so we can record what we're using 
+# real version numbers will vary depending on what you have installed:
+cljsh -v
+#------------------------------------------------------------------------------
+# cljsh version: 1.9.3 and lein-repls version: 1.9.4-SNAPSHOT
+#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 # evaluate clojure-code passed as command line argument with -c or -e
