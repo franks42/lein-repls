@@ -13,7 +13,7 @@
 # It allows the user to submit Clojure statement and Clojure script files
 # to a persistent networked repl for evaluation.
 
-CLJSH_VERSION="1.9.3"
+CLJSH_VERSION="1.9.4"
 
 ###############################################################################
 # init stuff
@@ -84,12 +84,13 @@ function startTerminalScript ()
 		osascript > /dev/null <<-ASEND
 				tell application "Terminal"
 					activate
-					do script "$*"
+					do script "cd $(pwd); $*"
 				end tell -- application "Terminal"
 		ASEND
 	else
-		${XTERM:-"/usr/X11/bin/xterm"} -e "$*" &
+		${XTERM:-"/usr/X11/bin/xterm"} -e $* >/dev/null </dev/null &
 	fi
+	echo "Starting \"lein repls\"..."
 }
 
 # search upwards for directory with project.clj 
@@ -123,16 +124,16 @@ function startRepls ()
 	if [ "${LEIN_REPL_PORT}" == "" ] || [ "$(lsof -itcp:$LEIN_REPL_PORT | grep -F LISTEN)" == "" ]; then
 		# no app listening on expected port, so start a new repls server
 		if [ -f "${LEIN_REPL_INIT_FILE}" ]; then rm "${LEIN_REPL_INIT_FILE}"; fi
-		startTerminalScript 'cd '"${LEIN_PROJECT_DIR}"'; lein repls'
+		startTerminalScript lein repls
 		ii=0; until [[ -f "${LEIN_REPL_INIT_FILE}" || $ii -gt 10 ]]; do
-			sleep 1; ii=$(($ii-1));
+			sleep 1; ii=$(($ii+1));
 		done
 		sleep 3
 		if [ -f "${LEIN_REPL_INIT_FILE}" ]; then 
 			source "${LEIN_REPL_INIT_FILE}" ; 
 			exit 0
 		else
-			displayAlert "ERROR: no lein project.clj found after starting lein repls (?)";
+			displayAlert "ERROR: no repls init file ${LEIN_REPL_INIT_FILE} found after trying to start lein repls (?)";
 			exit 1;
 		fi
 	fi
@@ -153,7 +154,7 @@ function upgradeCljsh ()
 		displayAlert "ERROR: You do not have permission to upgrade the installation in $SCRIPT"
 		exit 1
 	else
-		echo "Downloading cljsh stable version number..."
+		echo "Downloading cljsh stable version number..." >&2
 		TARGET="/tmp/cljsh-$$-upgrade"
 		CLJSH_SCRIPT_URL="https://raw.github.com/franks42/lein-repls/stable/bin/cljsh"
 		${HTTP_CLIENT} "$TARGET" "$CLJSH_SCRIPT_URL"
@@ -167,13 +168,13 @@ function upgradeCljsh ()
 		read RESP
 		case "$RESP" in
 			y|Y)
-				echo "Upgrading cljsh..."
+				echo "Upgrading cljsh..." >&2
 				mv "$TARGET" "$SCRIPT" \
 				&& chmod +x "$SCRIPT" \
 				&& "$SCRIPT" -v
 				exit $?;;
 			*)
-				echo "Cljsh upgrade aborted."
+				echo "Cljsh upgrade aborted." >&2
 				exit 1;;
 		esac
 	fi
@@ -182,18 +183,19 @@ function upgradeCljsh ()
 # up/down/side-grade lein-repls plugin
 function upgradeLeinRepls ()
 {
-	echo "Determine if the lein-repls plugin is installed..."
-	if [ "`lein help | grep -F 'repls'`" != "" ]; then 
-		CURRENT_LEIN_REPLS_VERSION="`cljsh -c '(println cljsh.core/lein-repls-version)'`"
+	echo "Determine if the lein-repls plugin is installed..." >&2
+	if [ "`lein help | grep -F 'repls'`" != "" ]; then
+		echo "Determine what lein-repls version is installed (need to start server if needed)..." >&2;
+		CURRENT_LEIN_REPLS_VERSION="`cljsh -lc '(println cljsh.core/lein-repls-version)'`"
 		if [ "$CURRENT_LEIN_REPLS_VERSION" == "" ]; then
 			displayAlert "ERROR: unable to obtain current lein-repls version - make sure repls-server is running.";
 			exit 1
 		fi
-		echo "Current lein-repls version is: \"$CURRENT_LEIN_REPLS_VERSION\".";
+		echo "Current lein-repls version is: \"$CURRENT_LEIN_REPLS_VERSION\"." >&2;
 	else
-		echo "No lein-repls plugin installed (yet).";
+		echo "No lein-repls plugin installed (yet)." >&2;
 	fi
-	echo "Downloading lein-repls info from clojars..."
+	echo "Downloading lein-repls info from clojars..." >&2;
 	TMP_ALL_JARS="/tmp/cljsh-$$-all-jars"
 	${HTTP_CLIENT} "$TMP_ALL_JARS" "http://clojars.org/repo/all-jars.clj"
 	echo "Available versions on clojars:"
@@ -202,14 +204,16 @@ function upgradeLeinRepls ()
 	read RESP;
 	if [ "$RESP" != "" ]; then
 		echo "Installing/Upgrading-to lein-repls version "$RESP"...";
+# 		echo "Stopping lein repls server..." >&2;
+# 		cljsh -L;
 		if [ "$CURRENT_LEIN_REPLS_VERSION" != "" ]; then
 			lein plugin uninstall lein-repls "$CURRENT_LEIN_REPLS_VERSION" && lein plugin install lein-repls "$RESP"
 		else
-			lein plugin install lein-repls "$RESP"
+			lein plugin install lein-repls "$RESP";
 		fi
 		exit $?
 	else
-		echo "lein-repls upgrade aborted.";
+		echo "lein-repls upgrade aborted." >&2;
 		exit 1;
 	fi
 }
@@ -320,11 +324,12 @@ while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtuUvVm:c:s:e:f:i:" opt; do
     	CLJ_REPL_PROMPT=1
       ;;
     l) 	# start the lein repls server if needed
-    	$(startRepls)
+    	startRepls
+    	exit_code=$?
     	LEIN_REPL_INIT_FILE="${LEIN_PROJECT_DIR}/.lein_repls"
 			if [ -f "${LEIN_REPL_INIT_FILE}" ]; then source "${LEIN_REPL_INIT_FILE}" ; fi
 			# $(testRepls)
- 	    if [ $OPTIND -gt $# ]; then exit 0; fi
+ 	    if [ $OPTIND -gt $# ]; then exit $exit_code; fi
       ;;
     L) 	# stop/exit the lein repls server
  	    if [ "${LEIN_REPL_PORT}" != "" ] && [ "$(lsof -itcp:$LEIN_REPL_PORT | grep -F LISTEN)" != "" ]; then

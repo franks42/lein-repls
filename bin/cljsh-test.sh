@@ -23,7 +23,7 @@ set -v   # turn on verbose - easy for verifying expected output
 # you must have a "lein repl" session running in a terminal somewhere
 
 #------------------------------------------------------------------------------
-# evaluate clojure-code passed as command line argument with -c
+# evaluate clojure-code passed as command line argument with -c or -e
 cljsh -c '(println "=> hello")'
 #------------------------------------------------------------------------------
 # => hello
@@ -84,26 +84,51 @@ echo '(println "=> then from pipe")' | cljsh -c '(println "=> first from arg")'
 # => then from pipe
 #------------------------------------------------------------------------------
 
-# we can also read from a single clojure file:
+# we can also read from a clojure file as the first non-option argument:
 echo '(println "=> this is from the tst.clj file")' > tst.clj
 cljsh tst.clj
 #------------------------------------------------------------------------------
 # => this is from the tst.clj file
 #------------------------------------------------------------------------------
 
-# watch the sequence of code eval:
-echo '(println "=> three (file)")' > tst.clj
-echo '(println "=> four (pipe)")' | cljsh -c '(println "=> one (arg)")' -c '(println "=> two (next arg)")' tst.clj
+# or we can read that clj-file with the -f or -i option:
+echo '(println "=> one (file)")' > tst1.clj
+echo '(println "=> two (file)")' > tst2.clj
+echo '(println "=> three (file)")' > tst3.clj
+echo '(println "=> four (file)")' > tst4.clj
+cljsh -i tst1.clj -f tst2.clj tst3.clj
 #------------------------------------------------------------------------------
-# => one (arg)
-# => two (next arg)
+# => one (file)
+# => two (file)
+# => three (file)
+#------------------------------------------------------------------------------
+
+# watch the sequence of code eval (note that stdin is last by default):
+echo '(println "=> one (file)")' > tst1.clj
+echo '(println "=> two (file)")' > tst2.clj
+echo '(println "=> three (file)")' > tst3.clj
+echo '(println "=> four (file)")' > tst4.clj
+echo '(println "=> four (pipe)")' | cljsh -f tst1.clj -e '(println "=> two (arg)")' tst3.clj
+#------------------------------------------------------------------------------
+# => one (file)
+# => two (arg)
 # => three (file)
 # => four (pipe)
 #------------------------------------------------------------------------------
 
+# the code is evaluated in the same sequence as the options on the command line
+# we can insert "-" in the option sequence to set the index of eval for stdin:
+echo '(println "=> two (pipe)")' | cljsh  -e '(println "=> one (arg)")' - -f tst3.clj tst4.clj
+#------------------------------------------------------------------------------
+# => one (arg)
+# => two (pipe)
+# => three (file)
+# => four (file)
+#------------------------------------------------------------------------------
+
 # the first argument that is not (part of) an option should be a single clj-file
 # additional args after the clj-file name are accessed thru: "@@cljsh.core/cljsh-file-command-line-args",
-# while the clj-file name itself is retrieved with: "@@cljsh.core/cljsh-file-command-path":
+# the clj-file name itself is retrieved with: "@@cljsh.core/cljsh-file-command-path":
 # both are inheritable-thread-local atom-vars, and the args are in an vector ready for use in cli.tools
 echo '(println "=> clj-file path and additional clj-file args: " @@cljsh.core/cljsh-file-command-path @@cljsh.core/cljsh-file-command-line-args)' > tst.clj
 cljsh tst.clj -a -b -c why -def not 
@@ -111,7 +136,7 @@ cljsh tst.clj -a -b -c why -def not
 # => clj-file path and additional clj-file args:  /Users/franks/Development/Clojure/lein-repls/tst.clj [-a -b -c why -def not]
 #------------------------------------------------------------------------------
 
-# the whole original command path and line options/args vector are also available thru 
+# the original command path for cljsh and its line options/args vector are also available thru 
 # @@cljsh.core/cljsh-command-path and @@cljsh.core/cljsh-command-line-args:
 # (as is cljsh's environment @@cljsh.core/cljsh-env, but that is a bit big to print out here...)
 echo '(println "=> command path and args: " @@cljsh.core/cljsh-command-path @@cljsh.core/cljsh-command-line-args)' > tst.clj
