@@ -8,7 +8,7 @@
   <name>lein-repls</name>
   <description>A leiningen plugin to start a persistent repl server for use with cljsh</description>
   <scm>
-    <tag>9baaf53878856b5d1bc22a810e2d0f53df7216a4</tag>
+    <tag>7e16fd4a9a5e1a7cb3571b7aaf2bd887cb974974</tag>
   </scm>
   <build>
     <sourceDirectory>src</sourceDirectory>

@@ -115,10 +115,6 @@ cljsh -i tst1.clj -f tst2.clj tst3.clj
 #------------------------------------------------------------------------------
 
 # watch the sequence of code eval (note that stdin is last by default):
-echo '(println "=> one (file)")' > tst1.clj
-echo '(println "=> two (file)")' > tst2.clj
-echo '(println "=> three (file)")' > tst3.clj
-echo '(println "=> four (file)")' > tst4.clj
 echo '(println "=> four (pipe)")' | cljsh -f tst1.clj -e '(println "=> two (arg)")' tst3.clj
 #------------------------------------------------------------------------------
 # => one (file)
