@@ -30,7 +30,7 @@ cljsh -l
 # real version numbers will vary depending on what you have installed:
 cljsh -v
 #------------------------------------------------------------------------------
-# cljsh version: 1.9.3 and lein-repls version: 1.9.4-SNAPSHOT
+# cljsh version: 1.9.5 and lein-repls version: 1.9.5
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------

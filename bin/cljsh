@@ -13,7 +13,7 @@
 # It allows the user to submit Clojure statement and Clojure script files
 # to a persistent networked repl for evaluation.
 
-CLJSH_VERSION="1.9.4"
+CLJSH_VERSION="1.9.5"
 
 ###############################################################################
 # init stuff

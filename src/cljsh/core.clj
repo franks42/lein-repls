@@ -17,7 +17,7 @@
 
 ;; some set at lein-repls start in leiningen.repls/repl-server
 (def ^:dynamic cljsh.core/lein-repls-name "lein-repls") 
-(def ^:dynamic cljsh.core/lein-repls-version "1.9.4-SNAPSHOT")
+(def ^:dynamic cljsh.core/lein-repls-version "1.9.5")
 (def ^:dynamic cljsh.core/lein-project-name "") 
 (def ^:dynamic cljsh.core/lein-project-version "")
 (def ^:dynamic cljsh.core/lein-repls-host "")
