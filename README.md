@@ -2,7 +2,7 @@
 
 ## Release notes
 
-Cljsh (> 1.9.2) and repls (> 1.9.2-SNAPSHOT) have the following new features:
+Cljsh (>= 1.9.5) and repls (>= 1.9.5) have the following new features:
 
 - cljsh automatically finds the repls-server that is started for the project (i.e. cljsh and repls both should be started from within the project's directory tree), so no need to keep track of port numbers and such. A single project can also be designated as "global" with cljsh (-G), such that any subsequent time a cljsh can indicate (-g) that it wants to interact with that global-project's repls-server. (a single project can be used as *the* scripting environment for all general clojure scripts os-wide)
 
@@ -37,34 +37,30 @@ The advantage of using socat and the networked interactive repl is that there is
 For info about leiningen see "https://github.com/technomancy/leiningen" - please do not come back until you have lein up&running...
 An easy way to install socat and rlwrap is thru ports/macports on macosx, but substitute your own brewing mechanism as you like:
 
-
-    $ sudo port install socat  
-    $ sudo port install rlwrap  
-
+		$ sudo port install socat  
+		$ sudo port install rlwrap  
 
 Now, you will have to download the cljsh shell script and put it somewhere on your path:  
 
-
-   	$ curl https://raw.github.com/franks42/lein-repls/stable/bin/cljsh > /tmp/cljsh  
-   	$ chmod +x /tmp/cljsh  
-   	$ mv /tmp/cljsh /somewhere-on-your-path/cljsh  
-
+		$ curl https://raw.github.com/franks42/lein-repls/stable/bin/cljsh > /tmp/cljsh  
+		$ chmod +x /tmp/cljsh  
+		$ mv /tmp/cljsh /somewhere-on-your-path/cljsh  
 
 If your cljsh is allowed to r&w its own instance, then you can use its auto-update feature later to obtain the latest stable version from github:
 
-    $ cljsh -u
-    ... self explanatory process ;-)...
+		$ cljsh -u
+		... self explanatory interactive process ;-)...
     
 On my macosx system, I have installed cljsh in ~/opt/bin/, which is on my PATH. In addition, I've made a symbolic link to /usr/bin/cljsh because macosx is somewhat non-standard in the reading of .bashrc and such :-(.
 
 There are two ways to install the "repls" plugin. The recommended installation of the repls plugin is thru cljsh, which will automate much of it for you, and can be used to easily upgrade in the future:
 
-    $ cljsh -U
-    ... self explanatory process ;-)...
+		$ cljsh -U
+		... self explanatory interactive process ;-)...
 
 The second, alternative way to install repls is thru the standard Leiningen mechanism:
 
-    $ lein plugin install lein-repls 1.9.0  
+		$ lein plugin install lein-repls 1.9.5  
 
 In that case, you will have to know lein-repls latest&greatest version number, which you can find at clojars.org and search for "lein-repls".
 
@@ -75,7 +71,7 @@ That's all... now you're ready to repls.
 
 "cd" to one of your clj-project directory trees, and start the repls server thru cljsh:
 
-    $ cljsh -l
+		$ cljsh -l
 
 which will automatically open up a new terminal window and session with:
 
@@ -93,7 +89,7 @@ In the terminal session where we invoked cljsh, we will use cljsh to send clj-co
 
 "cljsh"'s main purpose is sending clj-statements and/or clj-files to the persistent repl. That clj-code is specified as command line arguments like:
 
-  	$ cat three.clj | cljsh -c '(println "one")' -f two.clj - four.clj -args  
+		$ cat three.clj | cljsh -c '(println "one")' -f two.clj - four.clj -args  
 
 The sequence of positional arguments determine the evalation sequence, where stdin is indicated by "-" (default last). The first non-option should indicate a clj-file with optional args. (see cljsh -h).
 
@@ -102,9 +98,9 @@ The sequence of positional arguments determine the evalation sequence, where std
 
 In addition, cljsh also offers an interactive repl mode (-r), that is similar to the other interactive repls out there. The difference is that it's lightweight, allows for initialization scripts before the interactive session, and you can run as many as you want concurrently. In addition, it will use rlwrap with word completion. The word completion file can easily be updated to reflect the context of your session (-w). (it still is a poor-man's completion, though, compared to "real" context sensitive completers as in emacs...). It may also work with JLine, but I have not tested that.
 
-    $ cljsh -r
-    "Welcome to your Clojure (1.3.0) lein-repls (1.9.4-SNAPSHOT) client!"
-    user=>
+		$ cljsh -r
+		"Welcome to your Clojure (1.3.0) lein-repls (1.9.4-SNAPSHOT) client!"
+		user=>
 
 The best way to learn about all the options is to use the command line help (cljsh -h).
 For examples of most supported features, please take a look at the [cljsh-test.sh](https://raw.github.com/franks42/lein-repls/master/bin/cljsh-test.sh) ("https://raw.github.com/franks42/lein-repls/master/bin/cljsh-test.sh") in the distro's bin directory. Even better, run cljsh-test.sh to see if all works well.
