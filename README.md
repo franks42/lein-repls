@@ -4,21 +4,21 @@
 
 Cljsh (>= 1.9.5) and repls (>= 1.9.5) have the following new features:
 
-- cljsh automatically finds the repls-server that is started for the project (i.e. cljsh and repls both should be started from within the project's directory tree), so no need to keep track of port numbers and such. A single project can also be designated as "global" with cljsh (-G), such that any subsequent time a cljsh can indicate (-g) that it wants to interact with that global-project's repls-server. (a single project can be used as *the* scripting environment for all general clojure scripts os-wide)
+- cljsh automatically finds the repls-server that is started for the project, so no need to keep track of port numbers and such. Note that cljsh and repls both should be started from within the project's directory tree for this to work. A single project can also be designated as "global" with cljsh (-G), such that any subsequent cljsh invocation can indicate (-g) that it wants to interact with that global-project's repls-server no matter from which directory cljsh is started. In that way, a single project can be used as *the* scripting environment for all general clojure scripts os-wide.
 
 - self-update feature in cljsh (-U) that allows you to automagically download&install the latest stable cljsh version from github. (provided you installed cljsh in a place where cljsh can r&w).
 
-- update feature in cljsh for the lein plugin "repls" (-u) that automagically shows the available version for the lein plugin at clojars and will subsequently uninstall the current one and install the chosen one. (you may want to stay away from the SNAPSHOT versions...)
+- update feature in cljsh for the lein plugin "repls" (-u) that automagically shows the available version for the lein plugin at clojars and will subsequently uninstall the current one and install the chosen one. (you may want to stay away from the old and the SNAPSHOT versions...)
 
-- automatic starting from cljsh (-l) of the repls-server in a separate terminal session - when it's not running yet. (no more need to start the repls-server with "lein repls" in a new terminal session by hand )
+- automatic starting from cljsh (-l) of the repls-server + console in a separate terminal session (when it's not running yet) - no more need to start the repls-server with "lein repls" in a new terminal session by hand.
 
 - Stopping of the repls-server thru cljsh (-L). (stopping and restarting (-Ll) gives you essentially a restart of your project's jvm)
 
-- cljsh&repls are tested to install and run the cljsh-test.sh script successfully on both MacOSX 10.7.3 and LUbuntu 11.10 (log of the MacOSX install session is at "https://gist.github.com/1854631", and the Lubuntu install log is at "https://gist.github.com/1842625" - for Ubuntu, don't forget to set the XTERM environment variable to enable the auto-start of repls-server.)
+- The cljsh & repls combination are tested to install and run the cljsh-test.sh script successfully on both MacOSX 10.7.3 and LUbuntu 11.10 (log of the MacOSX install session is at "https://gist.github.com/1854631", and the Lubuntu install log is at "https://gist.github.com/1842625" - for Ubuntu, don't forget to set the XTERM environment variable to enable the auto-start of repls-server.)
 
 - started to look at nrepl as a possible repl-server for cljsh - the tty transport-module looks promising - seems to work out-of-the-box with cljsh's interactive repl (cljsh -s nrepl-port-number -r) - for non-interactive use, however, quite a few changes are needed (prompt printing, eval-result printing, stderr console-redirection, auto port config,...).
 
-- See https://github.com/franks42/lein-repls for details and source code - clone at your own peril ;-).
+- See "cljsh -h" and https://github.com/franks42/lein-repls for details and source code - clone at your own peril ;-).
 
 
 ## Intro.
