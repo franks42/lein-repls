@@ -10,11 +10,15 @@ Cljsh (>= 1.9.5) and repls (>= 1.9.5) have the following new features:
 
 - update feature in cljsh for the lein plugin "repls" (-u) that automagically shows the available version for the lein plugin at clojars and will subsequently uninstall the current one and install the chosen one. (you may want to stay away from the SNAPSHOT versions...)
 
-- automatic upstarting from cljsh (-l) of the repls-server in a separate terminal session when it's not running yet. (no more need to start the repls-server with "lein repls" in a new terminal session by hand )
+- automatic starting from cljsh (-l) of the repls-server in a separate terminal session - when it's not running yet. (no more need to start the repls-server with "lein repls" in a new terminal session by hand )
 
-- Stopping of the repls-server thru cljsh (-L). (stopping and restarting (-Ll) gives you essentially a restart of your project's image)
+- Stopping of the repls-server thru cljsh (-L). (stopping and restarting (-Ll) gives you essentially a restart of your project's jvm)
 
-- Tested to install cljsh&repls and run the test script successfully on both MacOSX and LUbuntu 11.10 (log of Lubuntu install sessions is at "https://gist.github.com/1842625" - don't forget to set the XTERM environment variable to enable the auto-start of repls-server.) - sorry, but I will not test other OS-flavors but I'm happy to accept mods that would accomodate even windows...
+- cljsh&repls are tested to install and run the cljsh-test.sh script successfully on both MacOSX 10.7.3 and LUbuntu 11.10 (log of the MacOSX install session is at "https://gist.github.com/1854631", and the Lubuntu install log is at "https://gist.github.com/1842625" - for Ubuntu, don't forget to set the XTERM environment variable to enable the auto-start of repls-server.)
+
+- started to look at nrepl as a possible repl-server for cljsh - the tty transport-module looks promising - seems to work out-of-the-box with cljsh's interactive repl (cljsh -s nrepl-port-number -r) - for non-interactive use, however, quite a few changes are needed (prompt printing, eval-result printing, stderr console-redirection, auto port config,...).
+
+- See https://github.com/franks42/lein-repls for details and source code - clone at your own peril ;-).
 
 
 ## Intro.
