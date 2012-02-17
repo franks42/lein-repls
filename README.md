@@ -31,23 +31,6 @@ Under the covers, cljsh is a bash shell-script that uses "socat" to make the net
 
 The advantage of using socat and the networked interactive repl is that there is no real protocol - or no protocol different from the normal interactive repl-interaction: feed forms in thru stdin to the clojure-reader, and have the results or printed side-effect returned on stdout. Think of it as some sort of telnet session with the interactive repl where you can turn the prompt off. This cljsh approach is different from cake, nailgun, swank and nrepl, which have true client-server protocols that arguably make those apps more powerful. However, for the basic use cases that cljsh tries to address, this basic interactive repl-protocol seems to do its job well.
 
-## Examples
-
-"cljsh"'s main purpose is sending clj-statements and/or clj-files to the persistent repl. That clj-code is specified as command line arguments like:
-
-
-  	$ cat three.clj | cljsh -c '(println "one")' -f two.clj - four.clj -args  
-
-
-The sequence of positional arguments determine the evalation sequence, where stdin is indicated by "-" (default last). The first non-option should indicate a clj-file with optional args. (see cljsh -h).
-
-In addition, cljsh also offers an interactive repl mode (-r), that is similar to the other interactive repls out there. The difference is that it's lightweight, allows for initialization scripts before the interactive session, and you can run as many as you want concurrently. In addition, it will use rlwrap with word completion. The word completion file can easily be updated to reflect the context of your session (-w). (it still is a poor-man's completion, though, compared to "real" context sensitive completers as in emacs...). It may also work with JLine, but I have not tested that.
-
-  	$ cljsh -r
-  	user=> 
-
-The best way to see all the option used is to use the command line help (cljsh -h) and to take a close look at the cljsh-test.sh script ("https://github.com/franks42/lein-repls/blob/stable/bin/cljsh-test.sh"), which should cover most of the use cases.
-
 ## Install
 
 "cljsh" needs an installed version of "leiningen", "socat" and optionally "rlwrap".
@@ -88,7 +71,7 @@ In that case, you will have to know lein-repls latest&greatest version number, w
 	
 That's all... now you're ready to repls.
 
-## Usage
+## Usage & examples
 
 "cd" to one of your clj-project directory trees, and start the repls server thru cljsh:
 
@@ -105,22 +88,25 @@ The persistent repl server is now running in that second terminal session, and w
 
 In the terminal session where we invoked cljsh, we will use cljsh to send clj-code to the repls-server. Just make sure that you stay within the project's directory tree when you invoke cljsh, such that cljsh will automatically pickup the server's port number.
 
+
 ### evaluate clojure-code passed as command line argument
 
+"cljsh"'s main purpose is sending clj-statements and/or clj-files to the persistent repl. That clj-code is specified as command line arguments like:
 
-		$ cljsh -c '(println "hello")'
-		hello
-		$
+  	$ cat three.clj | cljsh -c '(println "one")' -f two.clj - four.clj -args  
+
+The sequence of positional arguments determine the evalation sequence, where stdin is indicated by "-" (default last). The first non-option should indicate a clj-file with optional args. (see cljsh -h).
 
 
 ### to start a interactive repl-session:
 
+In addition, cljsh also offers an interactive repl mode (-r), that is similar to the other interactive repls out there. The difference is that it's lightweight, allows for initialization scripts before the interactive session, and you can run as many as you want concurrently. In addition, it will use rlwrap with word completion. The word completion file can easily be updated to reflect the context of your session (-w). (it still is a poor-man's completion, though, compared to "real" context sensitive completers as in emacs...). It may also work with JLine, but I have not tested that.
 
-		$ cljsh -r
-		"Welcome to your cljsh-lein-repl"
-		user=>
+    $ cljsh -r
+    "Welcome to your Clojure (1.3.0) lein-repls (1.9.4-SNAPSHOT) client!"
+    user=>
 
-
+The best way to learn about all the options is to use the command line help (cljsh -h).
 For examples of most supported features, please take a look at the [cljsh-test.sh](https://raw.github.com/franks42/lein-repls/master/bin/cljsh-test.sh) ("https://raw.github.com/franks42/lein-repls/master/bin/cljsh-test.sh") in the distro's bin directory. Even better, run cljsh-test.sh to see if all works well.
 
 
@@ -141,7 +127,7 @@ See the cljsh-test.sh for more explanations about some of those features.
 
 ## Acknowledgements
 
-Thanks to "technomancy" for leiningen, justin for cake, and the irc-clojure community for the great real-time support.
+Thanks to "technomancy" for leiningen, "ninjudd" for cake, and the irc-clojure community for the great real-time support.
 
 ## License
 
