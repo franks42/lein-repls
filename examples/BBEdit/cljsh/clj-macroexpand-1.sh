@@ -17,22 +17,15 @@ END
 
 if [ "${DOC_SELECTION}" != "" ]; then
 	# write selection to a newly created temp-file
-	CLJ_FILE=`mktemp -t bbedit_cljsh`.clj || exit 1
-	echo "${DOC_SELECTION}" > "${CLJ_FILE}"
-else
-	# ensure that document is saved, otherwise we work with out-of-date data
-	osascript <<-END
-		tell application "BBEdit"
-			save document 1
-		end tell
-	END
-	# no selection, so send whole clj-file for eval
-	CLJ_FILE="${BB_DOC_PATH}"
-fi
+	CLJ_FILE=`mktemp -t bbedit_cljsh_XXXX`.clj || exit 1
+	echo '(clojure.pprint/pprint (macroexpand-1 (quote '"${DOC_SELECTION}" ')))' > "${CLJ_FILE}"
+	# send the clj-file or tmp-file for eval
+	cljsh -lp "${CLJ_FILE}" >&2
+	EXIT_CODE=$?
 
-# send the clj-file or tmp-file for eval
-cljsh "${CLJ_FILE}" >&2
-EXIT_CODE=$?
+else
+	echo 'ERROR: must select a complete clj-form for macroexpand-1' >&2
+fi
 
 # bring the document window back in focus
 # use RCDefaultApp to associate "txmt:" schmema with either bbedit or textmate

@@ -110,7 +110,8 @@ function leinProjectDir ()
 function testRepls ()
 {
 	if [ "ping" == "$( cljsh -c '(println "ping")' )" ]; then 
-		displayAlert 'OK: repls server up & running and listening on port "'${LEIN_REPL_PORT}'"';
+	  alert_txt="OK: repls server up & running and listening on port ${LEIN_REPL_PORT} "
+		displayAlert "$alert_txt";
 		exit 0;
 	else
 		displayAlert "ERROR: some server listening on port ${LEIN_REPL_PORT}, but repls server not responding... not sure why (?).";
@@ -298,7 +299,7 @@ echo  '(cljsh.core/register-cljsh-command-line-args ['"$CLJSH_ARGS"'])' >> ${CLJ
 
 
 # command line option processing
-while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtuUvVm:c:s:e:f:i:" opt; do
+while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtTuUvVm:c:s:e:f:i:" opt; do
   case $opt in
     c) 	# clojure code statements expected as options value
     	echo "${OPTARG}" >> ${CLJ_CODE}
@@ -329,6 +330,11 @@ while [ "${!OPTIND}" == "-" ] || getopts ":darwplLPgGhtuUvVm:c:s:e:f:i:" opt; do
     	LEIN_REPL_INIT_FILE="${LEIN_PROJECT_DIR}/.lein_repls"
 			if [ -f "${LEIN_REPL_INIT_FILE}" ]; then source "${LEIN_REPL_INIT_FILE}" ; fi
 			# $(testRepls)
+ 	    if [ $OPTIND -gt $# ]; then exit $exit_code; fi
+      ;;
+    T) 	# test whether the lein repls server is up&running well
+			testRepls
+    	exit_code=$?
  	    if [ $OPTIND -gt $# ]; then exit $exit_code; fi
       ;;
     L) 	# stop/exit the lein repls server

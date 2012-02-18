@@ -34,7 +34,7 @@ END
 
 if [ "${DOC_SELECTION}" != "" ]; then
   # print doc - if none or error, use println to clear screen.
-  cljsh -c '(doc '"${DOC_SELECTION}"')(println)' #>&2 ;
+  cljsh -lc '(doc '"${DOC_SELECTION}"')(println)' #>&2 ;
   EXIT_CODE=$?;
 else
 	displayAlert "ERROR: No word selected for clj-doc lookup";
