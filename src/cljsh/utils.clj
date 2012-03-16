@@ -7,6 +7,7 @@
 ;; You must not remove this notice, or any other, from this software.
 
 (ns cljsh.utils
+  (:require clojure.java.shell)
   (:import clojure.lang.IDeref))
 
 ;;---------------------------------------------------------------------------------------
@@ -55,12 +56,5 @@
   [p]
   (atom @p :meta (meta p)))
   
-;; Usage:
-; (def counter (inheritable-thread-local copy-atom-child-init (atom 0)))
-; (swap! @counter inc)
-; (prinln "counter:" @@counter)
-
-;;---------------------------------------------------------------------------------------
-
 
 ;; eof utils.clj

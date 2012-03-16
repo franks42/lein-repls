@@ -25,8 +25,7 @@
 (defn symbol-name-parts
   "Parses a symbol name into a namespace and a name. If name doesn't
    contain a namespace, the default-ns is used (nil if none provided)."
-  ([symbol]
-     (symbol-name-parts symbol nil))
+  ([symbol] (symbol-name-parts symbol nil))
   ([#^String symbol default-ns]
      (let [ns-pos (.indexOf symbol (int \/))]
        (if (= ns-pos -1) ;; namespace found? 
@@ -314,3 +313,26 @@
 	(doall (map println (sort (concat
 		special-forms
 		(cljsh.completion/potential-completions nil *ns*))))))
+		
+
+(defn ns-find
+  "locate and return the namespace for a given string/symbol/keyword/namespace"
+  ([] (ns-find *ns*))
+  ([package]
+  (cond
+   (symbol? package) (find-ns package)
+   (string? package) (ns-find (symbol package))
+   (keyword? package) (ns-find (name package))
+   (instance? clojure.lang.Namespace package) package
+   :else nil)))
+
+
+
+(defn dir-fqn 
+  ([] (dir-fqn *ns*))
+  ([ns-maybe]
+    (when-let [ns (ns-find ns-maybe)]
+      (doseq [x (clojure.repl/dir-fn ns)] 
+        (println (str (ns-name ns) "/" x))))))
+
+

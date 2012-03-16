@@ -147,7 +147,35 @@
 		(binding [*err* cljsh.core/*console-err*]
 			(clojure.main/repl-caught e))
 		(clojure.main/repl-caught e)))
-		
+
+;; ns context facility
+
+(def ^:dynamic *saved-ns-context*   (atom "user"))
+(def ^:dynamic *default-ns-context* (atom "user"))
+
+(defn save-ns-context 
+  "Saves the current namespace context."
+  []
+  (println "save :" (str *ns*))
+  (swap! *saved-ns-context* (fn [_,n] (println "n:" n) n) (str *ns*)))
+
+(defn restore-ns-context 
+  "Restore the namespace context identified with ctxt (String)."
+  []
+  (println "restore :" (str *ns*))
+  (when-not (=  (str *ns*) @*default-ns-context*)
+    (swap! *default-ns-context* (fn [_,n] n) (str *ns*)))
+  (when-not (=  (str *ns*) @*saved-ns-context*)
+    (in-ns (symbol @*saved-ns-context*))))
+
+(defn restore-default-ns-context 
+  "Restore the namespace context identified with ctxt (String)."
+  []
+  (println "restore default :" (str *ns*))
+  (when-not (=  (str *ns*) @*default-ns-context*)
+    (in-ns (symbol @*default-ns-context*))))
+
+
 ;;;;
 ;; future processing
 ;;
