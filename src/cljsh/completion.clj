@@ -1,4 +1,5 @@
 (ns cljsh.completion
+  (:require [clojure.repl])
 	(:import 	[java.io File FilenameFilter]
 				 		[java.util StringTokenizer]
 				 		[java.util.jar JarFile JarEntry]
