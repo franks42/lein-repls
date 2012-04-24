@@ -1,4 +1,4 @@
-(defproject lein-repls "1.9.7"
+(defproject lein-repls "1.9.8"
 	:description "A leiningen plugin to start a persistent repl server for use with cljsh"
 	:dependencies [[org.clojure/clojure "1.3.0"]
 	               [clj-info "0.2.1"]
