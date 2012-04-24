@@ -88,7 +88,7 @@ function startTerminalScript ()
 				end tell -- application "Terminal"
 		ASEND
 	else
-		${XTERM:-"/usr/X11/bin/xterm"} -e $* >/dev/null </dev/null &
+		${XTERM:-$(which gnome-terminal||which xterm)} -e "$*" >/dev/null </dev/null &
 	fi
 	echo "Starting \"lein repls\"..."
 }
