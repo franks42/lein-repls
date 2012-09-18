@@ -13,7 +13,7 @@
 # It allows the user to submit Clojure statement and Clojure script files
 # to a persistent networked repl for evaluation.
 
-CLJSH_VERSION="1.9.8"
+CLJSH_VERSION="1.9.9"
 
 ###############################################################################
 # init stuff
@@ -612,7 +612,7 @@ if [ ${CLJ_REPL_PROMPT:-0} = 1 ]; then  # user wants an interactive REPL
 		if [ -f "${RLWRAP_CLJ_WORDS_FILE}" ]; then
 			RLWRAP_CLJ_WORDS_OPTION="-f ${RLWRAP_CLJ_WORDS_FILE}";
 		fi
-		RLWRAP="${RLWRAP}"" -p${RLWRAP_PROMPT_COLOR:-Red}"" -R"" -m\ "" -q\""" -b (){}[],^%$#@\";:'\\"" ${RLWRAP_CLJ_WORDS_OPTION}"
+		RLWRAP="${RLWRAP}"" -p${RLWRAP_PROMPT_COLOR:-Red}"" -R"" -q\""" -b (){}[],^%$#@\";:'\\"" ${RLWRAP_CLJ_WORDS_OPTION}"
 	fi
 
 	exec ${RLWRAP} bash -c "cat ${CLJ_BEFORE_LOAD} - | socat -t ${CLJSH_MAXTIME} - TCP4:${LEIN_REPL_HOST}:${LEIN_REPL_PORT}"
