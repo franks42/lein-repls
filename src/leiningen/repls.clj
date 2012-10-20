@@ -19,7 +19,7 @@
 (require 'cljsh.core)
 
 
-(def retry-limit 200)
+(def retry-limit 500)
 
 (defn repl-options [project options]
   (let [options (apply hash-map options)
