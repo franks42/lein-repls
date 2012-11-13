@@ -38,9 +38,7 @@ else
 fi
 
 # send the clj-file or tmp-file for eval
-
-cat "${CLJS_FILE}" | cljsh -tc '(require (quote cljs-info.repl))(println (let [s (clojure.string/join \newline (line-seq (java.io.BufferedReader. *in*)))] (cljs-info.repl/js->repl s)))' | tee "${CLJSH_OUTPUT_TXT}" 2>&1
-
+cat "${CLJS_FILE}" | cljsh -gb  | tee "${CLJSH_OUTPUT_TXT}" 2>&1
 EXIT_CODE=$?
 
 textutil -convert html -stdout  "${CLJSH_OUTPUT_TXT}" > "${CLJSH_OUTPUT_HTML}"

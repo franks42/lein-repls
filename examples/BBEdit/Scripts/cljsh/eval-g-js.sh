@@ -39,7 +39,7 @@ fi
 
 # send the clj-file or tmp-file for eval
 
-cat "${CLJS_FILE}" | cljsh -tc '(require (quote cljs-info.repl))(println (let [s (clojure.string/join \newline (line-seq (java.io.BufferedReader. *in*)))] (cljs-info.repl/js->repl s)))' | tee "${CLJSH_OUTPUT_TXT}" 2>&1
+cat "${CLJS_FILE}" | cljsh -gtc '(let [s (clojure.string/join \newline (line-seq (java.io.BufferedReader. *in*)))] (js>>> s))' | tee "${CLJSH_OUTPUT_TXT}" 2>&1
 
 EXIT_CODE=$?
 
